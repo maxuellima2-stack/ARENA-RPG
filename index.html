@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<title>Arena RPG 3D</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0e1a;color:#e0e8f0;font-family:system-ui,-apple-system,sans-serif;user-select:none;-webkit-user-select:none;overscroll-behavior:none;touch-action:manipulation;position:fixed}
+#app{width:100vw;height:100vh;height:100dvh;max-width:1400px;margin:0 auto;position:relative;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.screen{display:none;width:100%;height:100%;flex-direction:column}
+.screen.active{display:flex}
+#screen-menu{align-items:center;justify-content:center;padding:20px;gap:12px;overflow-y:auto;background:radial-gradient(ellipse at top,#1a3a5a,#0a0e1a 70%)}
+#title{font-size:42px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,#ffd966,#d47ab8,#6a9ae0);-webkit-background-clip:text;background-clip:text;color:transparent;text-align:center}
+#subtitle{font-size:13px;opacity:.6;margin-bottom:8px}
+.menu-btn{width:100%;max-width:340px;min-height:56px;padding:16px;font-size:17px;font-weight:700;color:#fff;background:linear-gradient(160deg,#4a7ac4,#2a4a94);border:none;border-radius:14px;cursor:pointer;box-shadow:0 4px 12px #00000066;touch-action:manipulation}
+.menu-btn:active{transform:scale(.97);filter:brightness(1.2)}
+.menu-btn.secondary{background:linear-gradient(160deg,#2a3a5a,#16203a)}
+.menu-btn.infinite{background:linear-gradient(160deg,#8a3ac4,#4a1a8a);border:1px solid #aa66ff}
+.menu-stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;max-width:380px}
+.menu-stats span{background:#1a2540;padding:8px 14px;border-radius:10px;border:1px solid #2a3a5a;font-size:13px}
+.menu-stats b{color:#ffd966}
+.menu-small-row{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;justify-content:center}
+.menu-small-btn{padding:10px 16px;font-size:13px;color:#e0e8f0;background:#1a2540;border:1px solid #2a3a5a;border-radius:10px;cursor:pointer}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#0f1524;border-bottom:1px solid #2a3a5a;font-size:14px;flex-shrink:0;min-height:56px}
+.topbar .back{background:#1a2540;border:1px solid #2a3a5a;color:#e0e8f0;padding:10px 16px;border-radius:10px;cursor:pointer;font-size:14px;min-height:44px}
+.topbar .gold{color:#ffd966;font-weight:700}
+.topbar .title{font-weight:700;font-size:15px}
+#screen-map,#screen-deck,#screen-sounds{background:#0f1524}
+.map-wrap,.deck-wrap,.sounds-wrap{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-width:900px;margin:0 auto}
+.map-node{padding:16px 12px;background:linear-gradient(160deg,#2a3a5a,#16203a);border:2px solid #4a5a7a;border-radius:14px;cursor:pointer;text-align:center;position:relative;min-height:120px}
+.map-node.locked{opacity:.4;cursor:not-allowed}
+.map-node.completed{border-color:#7ac47a}
+.map-node .num{font-size:28px;font-weight:900;color:#ffd966;line-height:1}
+.map-node .name{font-size:12px;font-weight:700;margin:8px 0 6px}
+.map-node .rewards{font-size:11px;opacity:.8}
+.map-node .badge{position:absolute;top:8px;right:8px;font-size:16px}
+.deck-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;max-width:900px;margin:0 auto}
+.deck-card{padding:14px;background:linear-gradient(160deg,#2a3a5a,#16203a);border:2px solid #4a5a7a;border-radius:14px}
+.deck-card .icon{font-size:32px;text-align:center;margin-bottom:4px}
+.deck-card .name{font-size:14px;font-weight:700;text-align:center}
+.deck-card .lvl{text-align:center;font-size:12px;color:#ffd966;margin:4px 0 8px}
+.deck-card .stats{display:flex;justify-content:space-around;font-size:11px;margin-bottom:10px;padding:8px 0;background:#0f1524;border-radius:8px}
+.deck-card .s-hp{color:#7ac47a}.deck-card .s-dmg{color:#e07a7a}
+.upgrade-btn{width:100%;min-height:44px;padding:10px;font-size:13px;font-weight:700;background:linear-gradient(160deg,#6a5a2a,#4a3a1a);color:#ffd966;border:1px solid #8a7a4a;border-radius:10px;cursor:pointer}
+.upgrade-btn:disabled{opacity:.4;cursor:not-allowed}
+.upgrade-btn.maxed{background:#2a3a5a;color:#7ac47a;border-color:#7ac47a}
+.sounds-wrap{padding:16px;max-width:700px;margin:0 auto;width:100%}
+.sound-info{font-size:12px;opacity:.7;margin-bottom:16px;line-height:1.5;padding:10px;background:#1a2540;border-radius:8px;border:1px solid #2a3a5a}
+.sound-item{display:flex;align-items:center;gap:12px;padding:12px;background:linear-gradient(160deg,#2a3a5a,#16203a);border:2px solid #4a5a7a;border-radius:12px;margin-bottom:10px}
+.sound-item .snd-icon{font-size:28px;flex-shrink:0}
+.sound-item .snd-info{flex:1;min-width:0}
+.sound-item .snd-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.sound-item .snd-status{font-size:11px;opacity:.7}
+.sound-item .snd-status.custom{color:#7ac47a}
+.sound-item .snd-status.default{color:#ffd966}
+.sound-item .snd-actions{display:flex;gap:6px;flex-shrink:0}
+.snd-btn{padding:8px 12px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;border:none;min-height:36px}
+.snd-btn.upload{background:#4a7ac4;color:#fff}
+.snd-btn.reset{background:#4a3a3a;color:#e0e0e0}
+.snd-btn.play{background:#2a5a2a;color:#fff}
+.snd-btn:disabled{opacity:.4;cursor:not-allowed}
+#screen-battle{background:#0f1524}
+#view{flex:1;position:relative;overflow:hidden;min-height:0;touch-action:none;display:flex;align-items:center;justify-content:center;background:#000}
+#view canvas{display:block;width:100%;height:100%;object-fit:contain}
+#hud{padding:8px 10px 10px;background:#0f1524;border-top:1px solid #2a3a5a;flex-shrink:0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+#battle-topbar{display:flex;justify-content:space-between;gap:6px;font-size:12px;margin-bottom:8px}
+#battle-topbar .stat{padding:6px 10px;background:#1a2540;border-radius:8px;border:1px solid #2a3a5a;font-weight:600;font-size:13px}
+#battle-topbar .p b{color:#6a9ae0}#battle-topbar .e b{color:#e06a6a}
+#elixir-wrap{position:relative;height:26px;border-radius:8px;overflow:hidden;background:#1a2540;border:1px solid #4a5a7a;margin-bottom:10px}
+#elixir-fill{height:100%;width:50%;background:linear-gradient(90deg,#a67ac4,#d47ab8);transition:width .08s linear}
+#elixir-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;text-shadow:0 1px 2px #000}
+#hand{display:flex;gap:8px}
+.card{flex:1;min-height:76px;padding:8px 4px 6px;background:linear-gradient(160deg,#2a3a5a,#16203a);border:2px solid #4a5a7a;border-radius:12px;text-align:center;cursor:pointer;position:relative;touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.card.selected{border-color:#ffd966;box-shadow:0 0 14px #ffd96688;transform:translateY(-3px)}
+.card.disabled{opacity:.35}
+.card .name{font-size:11px;font-weight:600;margin-top:2px}
+.card .lvl-badge{font-size:10px;color:#ffd966;font-weight:700}
+.card .icon{font-size:24px;line-height:1}
+.card .cost{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;background:#c47a9b;border:2px solid #0f1524;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+#hint{text-align:center;font-size:11px;opacity:.5;margin-top:6px}
+#drag-ghost{position:fixed;pointer-events:none;z-index:200;width:90px;height:90px;border-radius:12px;background:linear-gradient(160deg,#2a3a5a,#16203a);border:2px solid #ffd966;display:none;align-items:center;justify-content:center;flex-direction:column;transform:translate(-50%,-50%) scale(.85);box-shadow:0 8px 20px #000000aa;opacity:.9}
+#drag-ghost.active{display:flex}
+#drag-ghost .icon{font-size:32px}
+#drag-ghost .name{font-size:10px;font-weight:700;color:#ffd966}
+#fullscreen-btn{position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:8px;width:44px;height:44px;border-radius:10px;background:rgba(26,37,64,.9);border:1px solid #2a3a5a;color:#e0e8f0;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:90}
+#cam-reset-btn{position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:60px;width:44px;height:44px;border-radius:10px;background:rgba(26,37,64,.9);border:1px solid #2a3a5a;color:#e0e8f0;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:90}
+#cam-reset-btn.show{display:flex}
+#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(5,10,20,.9);z-index:100;opacity:0;pointer-events:none;transition:opacity .3s;padding:20px}
+#overlay.show{opacity:1;pointer-events:auto}
+#overlay-title{font-size:38px;font-weight:900;margin-bottom:6px;text-align:center}
+#overlay-title.win{color:#ffd966;text-shadow:0 0 20px #ffd966aa}
+#overlay-title.lose{color:#e06a6a;text-shadow:0 0 20px #e06a6aaa}
+#overlay-sub{font-size:14px;opacity:.8;margin-bottom:8px;text-align:center}
+#overlay-reward{font-size:15px;color:#ffd966;font-weight:700;margin-bottom:24px;text-align:center;line-height:1.5}
+#overlay-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ov-btn{padding:14px 24px;min-height:52px;font-size:15px;font-weight:700;background:linear-gradient(160deg,#4a7ac4,#2a4a94);color:#fff;border:none;border-radius:12px;cursor:pointer;box-shadow:0 4px 12px #00000066}
+.ov-btn.secondary{background:linear-gradient(160deg,#2a3a5a,#16203a)}
+#ov-next{background:linear-gradient(160deg,#4ac46a,#2a9444);box-shadow:0 4px 12px #4ac46a66}
+#ov-next:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screen-menu" class="screen active">
+    <div id="title">ARENA RPG</div>
+    <div id="subtitle">Cartas • Batalhas • Evolução</div>
+    <div class="menu-stats">
+      <span>🏆 Nv <b id="m-level">1</b></span>
+      <span>✨ XP <b id="m-xp">0</b></span>
+      <span>⚔️ <b id="m-wins">0</b></span>
+      <span>💰 <b id="m-gold">0</b></span>
+    </div>
+    <button class="menu-btn" onclick="showScreen('map')">⚔️ Jogar Campanha</button>
+    <button class="menu-btn infinite" onclick="openInfinite()" id="inf-btn">♾️ Modo Infinito</button>
+    <button class="menu-btn secondary" onclick="showScreen('deck')">🎴 Meu Deck</button>
+    <div class="menu-small-row">
+      <button class="menu-small-btn" id="sound-btn" onclick="toggleSound()">🔊 Som</button>
+      <button class="menu-small-btn" onclick="showScreen('sounds')">🎵 Sons</button>
+      <button class="menu-small-btn" onclick="toggleFullscreen()">📱 Tela Cheia</button>
+    </div>
+  </div>
+  <div id="screen-map" class="screen">
+    <div class="topbar"><button class="back" onclick="showScreen('menu')">←</button><div class="title">🗺️ Campanha</div><div class="gold">💰 <span id="map-gold">0</span></div></div>
+    <div class="map-wrap"><div class="map-grid" id="map-grid"></div></div>
+  </div>
+  <div id="screen-deck" class="screen">
+    <div class="topbar"><button class="back" onclick="showScreen('menu')">←</button><div class="title">🎴 Meu Deck</div><div class="gold">💰 <span id="deck-gold">0</span></div></div>
+    <div class="deck-wrap"><div class="deck-grid" id="deck-grid"></div></div>
+  </div>
+  <div id="screen-sounds" class="screen">
+    <div class="topbar"><button class="back" onclick="showScreen('menu')">←</button><div class="title">🎵 Sons dos Personagens</div><div></div></div>
+    <div class="sounds-wrap">
+      <div class="sound-info">💡 Faça upload de um arquivo <b>.mp3</b> ou <b>.wav</b> curto (1-2s) para cada personagem. Fica salvo no navegador.</div>
+      <div id="sounds-list"></div>
+    </div>
+  </div>
+  <div id="screen-battle" class="screen">
+    <div class="topbar" style="padding:6px 8px;min-height:44px">
+      <button class="back" onclick="fleeBattle()" style="padding:8px 12px;min-height:36px">←</button>
+      <div class="title" id="battle-title" style="font-size:12px;flex:1;text-align:center">Batalha</div>
+      <div style="width:44px"></div>
+    </div>
+    <div id="view"></div>
+    <div id="hud">
+      <div id="battle-topbar">
+        <div class="stat p">🏰 <b id="hp-player">1500</b></div>
+        <div class="stat e">🏰 <b id="hp-enemy">1500</b></div>
+      </div>
+      <div id="elixir-wrap"><div id="elixir-fill"></div><div id="elixir-text">5 / 10</div></div>
+      <div id="hand"></div>
+      <div id="hint">Destrua o castelo inimigo! Arraste carta • 1 dedo gira • Pinça zoom</div>
+    </div>
+  </div>
+</div>
+<div id="drag-ghost"><div class="icon">⚔️</div><div class="name"></div></div>
+<button id="fullscreen-btn" onclick="toggleFullscreen()" style="display:none">⛶</button>
+<button id="cam-reset-btn" onclick="resetCamera()" title="Resetar câmera">🎥</button>
+<input type="file" id="snd-file-input" accept="audio/*" style="display:none">
+<div id="overlay">
+  <div id="overlay-title">VITÓRIA!</div><div id="overlay-sub"></div><div id="overlay-reward"></div>
+  <div id="overlay-btns">
+    <button class="ov-btn" id="ov-next">▶️ Próxima</button>
+    <button class="ov-btn" id="ov-retry">🔄 Jogar de novo</button>
+    <button class="ov-btn secondary" id="ov-back">⬅️ Voltar</button>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+const RIVER_HALF_W_A = 30, BRIDGE_HALF_DEPTH_A = 30, BRIDGE_Y_A = [80, 370], RIVER_CENTER_X = 400;
+const S = 0.1;
+const to3DX = x => (x - 400) * S;
+const to3DZ = y => (y - 225) * S;
+const from3DX = x => x / S + 400;
+const from3DZ = z => z / S + 225;
+const RENDER_RES = 720;
+
+const CARDS = [
+  { id:'knight',   name:'Cavaleiro',  icon:'⚔️', cost:3, hp:600,  dmg:150, speed:55, range:35,  attackMs:900,  count:1, ranged:false },
+  { id:'archer',   name:'Arqueira',   icon:'🏹', cost:3, hp:250,  dmg:70,  speed:65, range:120, attackMs:900,  count:1, ranged:true  },
+  { id:'giant',    name:'Gigante',    icon:'🗿', cost:5, hp:1800, dmg:200, speed:30, range:40,  attackMs:1300, count:1, ranged:false },
+  { id:'goblins',  name:'Goblins',    icon:'👺', cost:2, hp:130,  dmg:50,  speed:90, range:28,  attackMs:700,  count:3, ranged:false },
+  { id:'musketeer',name:'Mosqueteira',icon:'🔫', cost:4, hp:400,  dmg:120, speed:60, range:150, attackMs:1100, count:1, ranged:true  },
+  { id:'wizard',   name:'Mago',       icon:'🔮', cost:5, hp:350,  dmg:180, speed:55, range:140, attackMs:1200, count:1, ranged:true  },
+  { id:'valkyrie', name:'Valquíria',  icon:'🪓', cost:4, hp:900,  dmg:180, speed:70, range:38,  attackMs:1000, count:1, ranged:false },
+  { id:'balloon',  name:'Balão',      icon:'🎈', cost:5, hp:900,  dmg:280, speed:42, range:90,  attackMs:1400, count:1, ranged:true, flying:true },
+];
+const CARDS_BY_ID = Object.fromEntries(CARDS.map(c => [c.id, c]));
+
+const CAMPAIGN = [
+  { name:'Planície Inicial', enemyLevel:1.00, enemyCards:['knight'], gold:80, xp:30,
+    theme:{ groundA:'#5aa83a', groundB:'#3a8822', sky:'#6ab8f0', skyTop:'#3a88d0', fog:'#88c8f0',
+      mountains:['#5a7a4a','#4a6a3a','#6a8a5a'], mountainTop:'#ffffff', snow:true,
+      leaf:'#2a7a2a', trunk:'#5a3a1a', rock:'#8a8a7a', sun:'#fff8c0',
+      fx:['leaves','butterflies','waterfall','birds'] } },
+  { name:'Floresta Sombria', enemyLevel:1.15, enemyCards:['knight','archer'], gold:120, xp:45,
+    theme:{ groundA:'#2a5a2a', groundB:'#1a4a1a', sky:'#3a4a3a', skyTop:'#1a2a1a', fog:'#2a3a2a',
+      mountains:['#2a3a2a','#1a2a1a','#3a4a3a'], mountainTop:'#4a5a4a', snow:false,
+      leaf:'#1a4a1a', trunk:'#3a2a1a', rock:'#5a5a5a', sun:'#c0e0a0',
+      fx:['fireflies','mist','glowMushrooms'] } },
+  { name:'Colinas do Vento', enemyLevel:1.30, enemyCards:['archer','goblins'], gold:180, xp:60,
+    theme:{ groundA:'#7a9a4a', groundB:'#6a8a3a', sky:'#a8d0e0', skyTop:'#5aa0d0', fog:'#a8d0e0',
+      mountains:['#8a7a5a','#7a6a4a','#9a8a6a'], mountainTop:'#ddccaa', snow:false,
+      leaf:'#3a7a3a', trunk:'#5a3a1a', rock:'#9a9a8a', sun:'#fff0a0',
+      fx:['wind','birds','leaves'] } },
+  { name:'Pântano Esquecido', enemyLevel:1.50, enemyCards:['goblins','knight','archer'], gold:260, xp:80,
+    theme:{ groundA:'#4a5a2a', groundB:'#3a4a1a', sky:'#7a8a6a', skyTop:'#4a5a4a', fog:'#6a7a5a',
+      mountains:['#4a4a3a','#3a3a2a','#5a5a4a'], mountainTop:'#6a6a5a', snow:false,
+      leaf:'#3a5a2a', trunk:'#4a3a1a', rock:'#5a5a4a', sun:'#d0d0a0',
+      fx:['bubbles','mist','fireflies'] } },
+  { name:'Ruínas Antigas', enemyLevel:1.70, enemyCards:['knight','giant','valkyrie'], gold:360, xp:100,
+    theme:{ groundA:'#8a8a7a', groundB:'#6a6a5a', sky:'#a8a8b0', skyTop:'#707080', fog:'#a8a8b0',
+      mountains:['#7a7a7a','#6a6a6a','#8a8a8a'], mountainTop:'#cccccc', snow:false,
+      leaf:'#5a7a5a', trunk:'#5a4a3a', rock:'#9a9a8a', sun:'#e0e0e0',
+      fx:['dust','torches','debris'] } },
+  { name:'Vale dos Gigantes', enemyLevel:1.90, enemyCards:['giant','archer','valkyrie'], gold:500, xp:125,
+    theme:{ groundA:'#8a6a3a', groundB:'#6a5a2a', sky:'#d0a870', skyTop:'#b08040', fog:'#d0a870',
+      mountains:['#8a6a4a','#7a5a3a','#9a7a5a'], mountainTop:'#e0d0a0', snow:true,
+      leaf:'#5a6a3a', trunk:'#5a3a1a', rock:'#9a8a6a', sun:'#ffddaa',
+      fx:['birds','leaves','wind'] } },
+  { name:'Fortaleza de Gelo', enemyLevel:2.10, enemyCards:['musketeer','knight','wizard'], gold:700, xp:150,
+    theme:{ groundA:'#c8e0f0', groundB:'#a8c8e0', sky:'#88b8e0', skyTop:'#5a90c8', fog:'#88b8e0',
+      mountains:['#a8c0d0','#88a0b0','#b8d0e0'], mountainTop:'#ffffff', snow:true,
+      leaf:'#6a8a9a', trunk:'#5a4a3a', rock:'#a8b8c8', sun:'#e0f0ff',
+      fx:['snow','iceCrystals'] } },
+  { name:'Deserto Escaldante', enemyLevel:2.30, enemyCards:['musketeer','goblins','archer','wizard'], gold:950, xp:180,
+    theme:{ groundA:'#e0b870', groundB:'#c0a050', sky:'#f0c080', skyTop:'#e09040', fog:'#f0c080',
+      mountains:['#c8a070','#b89060','#d8b080'], mountainTop:'#e0c090', snow:false,
+      leaf:'#8a7a3a', trunk:'#6a4a2a', rock:'#c0a080', sun:'#ffeeaa',
+      fx:['sand','sunRays'] } },
+  { name:'Cavernas Profundas', enemyLevel:2.55, enemyCards:['giant','goblins','wizard','valkyrie'], gold:1300, xp:220,
+    theme:{ groundA:'#3a2a5a', groundB:'#2a1a4a', sky:'#1a1030', skyTop:'#0a0520', fog:'#1a1030',
+      mountains:['#2a2a4a','#3a2a5a','#1a1a3a'], mountainTop:'#5a3a8a', snow:false,
+      leaf:'#4a2a6a', trunk:'#2a1a3a', rock:'#3a2a4a', sun:'#aa88dd',
+      fx:['glowCrystals','drips','fireflies'] } },
+  { name:'Arena do Rei', enemyLevel:2.85, enemyCards:['knight','archer','giant','musketeer','wizard','valkyrie'], gold:2000, xp:300,
+    theme:{ groundA:'#8a3a3a', groundB:'#6a2a2a', sky:'#d0a870', skyTop:'#b07040', fog:'#d0a870',
+      mountains:['#6a3a2a','#5a2a1a','#7a4a3a'], mountainTop:'#ffd966', snow:false,
+      leaf:'#7a4a2a', trunk:'#4a2a1a', rock:'#8a6a5a', sun:'#ffd966',
+      fx:['torches','goldSparkles','banners'] } },
+  { name:'Costa Tempestuosa', enemyLevel:3.05, enemyCards:['musketeer','wizard','goblins','archer','balloon'], gold:2500, xp:350,
+    theme:{ groundA:'#5a8ab0', groundB:'#3a6a8a', sky:'#88bcd8', skyTop:'#3a80b0', fog:'#88bcd8',
+      mountains:['#5a7a8a','#4a6a7a','#6a8a9a'], mountainTop:'#c8e0f0', snow:true,
+      leaf:'#3a7a8a', trunk:'#4a3a2a', rock:'#7a8a9a', sun:'#d8f0ff',
+      fx:['birds','wind','bubbles'] } },
+  { name:'Vulcão Fumegante', enemyLevel:3.30, enemyCards:['giant','wizard','valkyrie','musketeer','balloon'], gold:3000, xp:420,
+    theme:{ groundA:'#3a1a1a', groundB:'#2a0a0a', sky:'#5a2020', skyTop:'#2a0a0a', fog:'#3a1010',
+      mountains:['#5a1a1a','#3a0a0a','#6a2a2a'], mountainTop:'#ff6622', snow:false,
+      leaf:'#5a2a1a', trunk:'#2a1a0a', rock:'#3a1a0a', sun:'#ff8844',
+      fx:['torches','dust','glowCrystals'] } },
+  { name:'Floresta Encantada', enemyLevel:3.55, enemyCards:['archer','wizard','knight','valkyrie','balloon'], gold:3600, xp:500,
+    theme:{ groundA:'#3a6a4a', groundB:'#1a4a2a', sky:'#88d0a8', skyTop:'#3a8060', fog:'#88d0a8',
+      mountains:['#2a5a3a','#1a4a2a','#3a6a4a'], mountainTop:'#88ffa8', snow:false,
+      leaf:'#2a8a4a', trunk:'#3a2a1a', rock:'#4a6a4a', sun:'#aaffaa',
+      fx:['fireflies','glowMushrooms','butterflies','mist'] } },
+  { name:'Cidadela Dourada', enemyLevel:3.85, enemyCards:['knight','musketeer','giant','wizard','balloon'], gold:4300, xp:600,
+    theme:{ groundA:'#c8a03a', groundB:'#a88020', sky:'#f0d090', skyTop:'#c8a050', fog:'#f0d090',
+      mountains:['#a88040','#886820','#c8a050'], mountainTop:'#ffdd44', snow:false,
+      leaf:'#c8a030', trunk:'#5a3a1a', rock:'#a88040', sun:'#ffee44',
+      fx:['goldSparkles','banners','dust'] } },
+  { name:'Abismo Sombrio', enemyLevel:4.15, enemyCards:['goblins','valkyrie','wizard','giant','balloon'], gold:5100, xp:720,
+    theme:{ groundA:'#1a1a2a', groundB:'#0a0a1a', sky:'#2a1a3a', skyTop:'#0a0518', fog:'#1a1030',
+      mountains:['#2a1a4a','#1a0a3a','#3a2a5a'], mountainTop:'#6a3aa0', snow:false,
+      leaf:'#3a2a5a', trunk:'#1a0a2a', rock:'#2a1a3a', sun:'#8866cc',
+      fx:['fireflies','mist','glowCrystals','drips'] } },
+  { name:'Torre do Mago', enemyLevel:4.45, enemyCards:['wizard','musketeer','giant','archer','balloon'], gold:6000, xp:850,
+    theme:{ groundA:'#4a3a8a', groundB:'#2a1a6a', sky:'#8866d8', skyTop:'#5a3aa0', fog:'#8866d8',
+      mountains:['#5a3a8a','#3a2a6a','#6a4a9a'], mountainTop:'#aa88ff', snow:false,
+      leaf:'#6a4aa0', trunk:'#3a2a4a', rock:'#4a3a6a', sun:'#ccaa44',
+      fx:['glowCrystals','dust','fireflies','banners'] } },
+  { name:'Campos de Batalha', enemyLevel:4.75, enemyCards:['knight','archer','giant','musketeer','wizard','valkyrie','balloon'], gold:7100, xp:1000,
+    theme:{ groundA:'#6a5a3a', groundB:'#4a3a2a', sky:'#d0b080', skyTop:'#a08060', fog:'#d0b080',
+      mountains:['#7a5a3a','#5a3a2a','#8a6a4a'], mountainTop:'#d0c090', snow:true,
+      leaf:'#5a4a2a', trunk:'#3a2a1a', rock:'#7a6a4a', sun:'#ffd080',
+      fx:['dust','birds','banners'] } },
+  { name:'Lago Congelado', enemyLevel:5.05, enemyCards:['musketeer','giant','archer','wizard','balloon'], gold:8400, xp:1200,
+    theme:{ groundA:'#c8e0f8', groundB:'#88b8d8', sky:'#a0d0f8', skyTop:'#5090c8', fog:'#a0d0f8',
+      mountains:['#b0d0e8','#90b0c8','#c8e0f8'], mountainTop:'#ffffff', snow:true,
+      leaf:'#80a0b8', trunk:'#5a4a4a', rock:'#b0c8d8', sun:'#e8f8ff',
+      fx:['snow','iceCrystals','mist'] } },
+  { name:'Templo Perdido', enemyLevel:5.40, enemyCards:['valkyrie','wizard','knight','giant','balloon'], gold:9900, xp:1450,
+    theme:{ groundA:'#5a4a1a', groundB:'#3a2a0a', sky:'#a08a3a', skyTop:'#6a5a1a', fog:'#a08a3a',
+      mountains:['#6a5a2a','#4a3a1a','#7a6a3a'], mountainTop:'#ffd966', snow:false,
+      leaf:'#4a3a1a', trunk:'#2a1a0a', rock:'#5a4a2a', sun:'#ffdd66',
+      fx:['torches','dust','goldSparkles','debris'] } },
+  { name:'Palácio Celestial', enemyLevel:5.75, enemyCards:['knight','archer','giant','musketeer','wizard','valkyrie','balloon'], gold:11600, xp:1700,
+    theme:{ groundA:'#d0e0f8', groundB:'#a0c0e0', sky:'#f0f8ff', skyTop:'#a0d0ff', fog:'#e0f0ff',
+      mountains:['#c8d8e8','#a8b8c8','#d8e8f8'], mountainTop:'#ffffff', snow:true,
+      leaf:'#88a8c8', trunk:'#5a4a4a', rock:'#c0d0e0', sun:'#ffffcc',
+      fx:['snow','iceCrystals','goldSparkles','birds'] } },
+  { name:'Arena Infernal', enemyLevel:6.10, enemyCards:['giant','wizard','valkyrie','knight','musketeer','balloon'], gold:13500, xp:2000,
+    theme:{ groundA:'#4a1010', groundB:'#2a0808', sky:'#8a2020', skyTop:'#4a0808', fog:'#6a1a1a',
+      mountains:['#6a2020','#4a1010','#7a3030'], mountainTop:'#ff4400', snow:false,
+      leaf:'#8a2020', trunk:'#2a0a0a', rock:'#5a1a1a', sun:'#ff5522',
+      fx:['torches','dust','glowCrystals','debris'] } },
+  { name:'Monte dos Deuses', enemyLevel:6.50, enemyCards:['knight','archer','giant','musketeer','wizard','valkyrie','balloon'], gold:15500, xp:2400,
+    theme:{ groundA:'#8a7a8a', groundB:'#6a5a6a', sky:'#d8c8d8', skyTop:'#a890a8', fog:'#d8c8d8',
+      mountains:['#a08a9a','#807080','#b098a0'], mountainTop:'#ffffff', snow:true,
+      leaf:'#6a5a6a', trunk:'#3a2a3a', rock:'#8a7a8a', sun:'#ffd8ff',
+      fx:['snow','goldSparkles','birds','banners'] } },
+  { name:'Dimensão Caótica', enemyLevel:6.95, enemyCards:['knight','archer','giant','musketeer','wizard','valkyrie','balloon'], gold:17500, xp:2800,
+    theme:{ groundA:'#8a2a8a', groundB:'#5a0a5a', sky:'#d050d0', skyTop:'#6a0a6a', fog:'#d050d0',
+      mountains:['#a03aa0','#6a1a6a','#c04ac0'], mountainTop:'#ff88ff', snow:false,
+      leaf:'#a03aa0', trunk:'#4a0a4a', rock:'#7a2a7a', sun:'#ff88ff',
+      fx:['fireflies','glowCrystals','dust','goldSparkles'] } },
+  { name:'Cidadela Sombria', enemyLevel:7.40, enemyCards:['knight','archer','giant','musketeer','wizard','valkyrie','balloon'], gold:20000, xp:3300,
+    theme:{ groundA:'#2a2a3a', groundB:'#0a0a1a', sky:'#3a3a5a', skyTop:'#0a0a1a', fog:'#2a2a4a',
+      mountains:['#3a3a5a','#2a2a4a','#4a4a6a'], mountainTop:'#aa88cc', snow:false,
+      leaf:'#3a3a5a', trunk:'#1a1a2a', rock:'#2a2a4a', sun:'#8866cc',
+      fx:['fireflies','mist','torches','glowCrystals'] } },
+  { name:'Batalha Final', enemyLevel:8.00, enemyCards:['knight','archer','giant','musketeer','wizard','valkyrie','balloon'], gold:25000, xp:4000,
+    theme:{ groundA:'#c8443a', groundB:'#a02820', sky:'#ffaa66', skyTop:'#d05030', fog:'#ffaa66',
+      mountains:['#a03a2a','#802a1a','#c04a3a'], mountainTop:'#ffd966', snow:true,
+      leaf:'#a03a2a', trunk:'#4a1a0a', rock:'#8a4a3a', sun:'#ffee44',
+      fx:['torches','goldSparkles','banners','birds'] } },
+];
+
+const CARD_LEVEL_MAX = 10, CARD_LEVEL_MULT = 0.15;
+const UPGRADE_COST = [0,100,250,500,1000,2000,3500,6000,10000,16000];
+const PLAYER_LEVEL_BONUS = 0.01;
+const DEFAULT_META = {
+  level:1, xp:0, wins:0, gold:150,
+  cards:{ knight:{level:1}, archer:{level:1}, giant:{level:1}, goblins:{level:1},
+    musketeer:{level:1}, wizard:{level:1}, valkyrie:{level:1}, balloon:{level:1} },
+  campaignProgress:0,
+  infiniteBest:0,
+  infiniteCurrent:1,
+};
+function loadMeta() {
+  const saved = JSON.parse(localStorage.getItem('arenaMeta3d_tesla') || 'null');
+  if (!saved) return JSON.parse(JSON.stringify(DEFAULT_META));
+  const m = { ...DEFAULT_META, ...saved, cards:{ ...DEFAULT_META.cards, ...(saved.cards||{}) } };
+  if (!m.cards.balloon) m.cards.balloon = { level: 1 };
+  return m;
+}
+let meta = loadMeta();
+const saveMeta = () => localStorage.setItem('arenaMeta3d_tesla', JSON.stringify(meta));
+const getCardLevel = id => meta.cards[id]?.level || 1;
+function getCardWithLevel(cardId, lvlOverride) {
+  const base = CARDS_BY_ID[cardId];
+  const lvl = lvlOverride ?? getCardLevel(cardId);
+  const mult = (1 + (lvl-1)*CARD_LEVEL_MULT) * (1 + (meta.level-1)*PLAYER_LEVEL_BONUS);
+  return { ...base, hp: Math.round(base.hp*mult), dmg: Math.round(base.dmg*mult), level: lvl };
+}
+
+const Sound = {
+  ctx: null, enabled: true, noiseBuffer: null, reverbBuffer: null, custom: {},
+  init() {
+    if (this.ctx) return;
+    try {
+      this.ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const nlen = this.ctx.sampleRate * 2;
+      this.noiseBuffer = this.ctx.createBuffer(1, nlen, this.ctx.sampleRate);
+      const nd = this.noiseBuffer.getChannelData(0);
+      for (let i = 0; i < nlen; i++) nd[i] = Math.random()*2-1;
+      const ilen = Math.floor(this.ctx.sampleRate * 1.5);
+      this.reverbBuffer = this.ctx.createBuffer(2, ilen, this.ctx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = this.reverbBuffer.getChannelData(ch);
+        for (let i = 0; i < ilen; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/ilen, 2.5);
+      }
+      try { this.custom = JSON.parse(localStorage.getItem('arenaSounds') || '{}'); }
+      catch(e) { this.custom = {}; }
+    } catch(e) { this.enabled = false; }
+  },
+  resume() { if (this.ctx?.state === 'suspended') this.ctx.resume(); },
+  voice(baseFreq, dur, vol, glide=0, vibrato=0, delay=0) {
+    if (!this.enabled || !this.ctx) return;
+    const now = this.ctx.currentTime + delay;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(baseFreq, now);
+    if (glide !== 0) osc.frequency.linearRampToValueAtTime(baseFreq*(1+glide), now+dur);
+    if (vibrato > 0) {
+      const lfo = this.ctx.createOscillator();
+      lfo.frequency.value = 5;
+      const lg = this.ctx.createGain();
+      lg.gain.value = vibrato;
+      lfo.connect(lg); lg.connect(osc.frequency);
+      lfo.start(now); lfo.stop(now+dur);
+    }
+    const master = this.ctx.createGain();
+    master.gain.setValueAtTime(0, now);
+    master.gain.linearRampToValueAtTime(vol, now+0.03);
+    master.gain.setValueAtTime(vol, now+dur*0.6);
+    master.gain.exponentialRampToValueAtTime(0.001, now+dur);
+    [700, 1200, 2600].forEach((f, i) => {
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass'; filter.frequency.value = f; filter.Q.value = 8;
+      const fg = this.ctx.createGain(); fg.gain.value = 0.6/(i+1);
+      osc.connect(filter); filter.connect(fg); fg.connect(master);
+    });
+    const conv = this.ctx.createConvolver();
+    conv.buffer = this.reverbBuffer;
+    const cg = this.ctx.createGain(); cg.gain.value = 0.25;
+    master.connect(this.ctx.destination);
+    master.connect(conv); conv.connect(cg); cg.connect(this.ctx.destination);
+    osc.start(now); osc.stop(now+dur);
+  },
+  noise(dur, vol, ftype, ffreq, delay=0) {
+    if (!this.enabled || !this.ctx) return;
+    const now = this.ctx.currentTime + delay;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = ftype; filter.frequency.value = ffreq;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(vol, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now+dur);
+    src.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+    src.start(now); src.stop(now+dur);
+  },
+  playCry(cardId) {
+    this.init(); this.resume();
+    if (!this.enabled) return;
+    if (this.custom[cardId]) {
+      const a = new Audio(this.custom[cardId]);
+      a.volume = 0.8;
+      a.play().catch(()=>{});
+      return;
+    }
+    switch(cardId) {
+      case 'knight': this.voice(180,0.5,0.15,-0.3,8); this.noise(0.15,0.1,'highpass',3000,0.1); break;
+      case 'archer': this.voice(650,0.25,0.12,0.2,15); break;
+      case 'giant': this.voice(70,0.8,0.2,-0.25,4); this.noise(0.6,0.06,'lowpass',250,0); break;
+      case 'goblins': this.voice(900,0.1,0.1,0.3,30); this.voice(1100,0.1,0.08,0.3,30,0.1); break;
+      case 'musketeer': this.noise(0.15,0.2,'highpass',2500,0); this.voice(700,0.25,0.1,-0.3,15,0.05); break;
+      case 'wizard': this.voice(400,0.4,0.1,1.5,10); break;
+      case 'valkyrie': this.voice(450,0.4,0.14,-0.2,12); break;
+      case 'balloon': this.voice(300,0.5,0.1,0.4,6); this.voice(450,0.35,0.08,0.3,10,0.2); break;
+    }
+  },
+  playAttack(cardId) {
+    if (!this.enabled || !this.ctx) return;
+    switch(cardId) {
+      case 'knight': this.noise(0.1,0.15,'highpass',3000,0); break;
+      case 'archer': this.noise(0.08,0.1,'highpass',4000,0); break;
+      case 'giant': this.voice(80,0.15,0.1,-0.3); break;
+      case 'goblins': this.noise(0.06,0.08,'highpass',3500,0); break;
+      case 'musketeer': this.noise(0.12,0.18,'highpass',2800,0); break;
+      case 'wizard': this.voice(1200,0.15,0.08,0.5,20); break;
+      case 'valkyrie': this.noise(0.1,0.12,'bandpass',2000,0); break;
+      case 'balloon': this.voice(150,0.3,0.12,-0.5,3); this.noise(0.4,0.15,'lowpass',300,0.3); break;
+    }
+  },
+  zap() {
+    this.voice(1400, 0.08, 0.12, 0.5, 40);
+    this.noise(0.12, 0.15, 'highpass', 4000, 0);
+  },
+  explosionSound() {
+    this.noise(0.5, 0.3, 'lowpass', 500, 0);
+    this.voice(60, 0.4, 0.15, -0.4);
+  },
+  hitSmall(){this.noise(0.04,0.08,'bandpass',2000,0);},
+  hitTower(){this.voice(100,0.2,0.12,-0.5); this.noise(0.15,0.12,'lowpass',400,0);},
+  towerShot(){this.noise(0.08,0.1,'highpass',2000,0);},
+  victory(){[523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.voice(f,0.4,0.12,0,5),i*100));},
+  defeat(){[400,350,300,220].forEach((f,i)=>setTimeout(()=>this.voice(f,0.5,0.1,-0.1,8),i*180));},
+  upgrade(){this.voice(880,0.15,0.1,0.5); setTimeout(()=>this.voice(1320,0.2,0.08,0.5),100);},
+  click(){this.noise(0.03,0.05,'highpass',1500,0);},
+  resetCustom(cardId) {
+    delete this.custom[cardId];
+    const saved = JSON.parse(localStorage.getItem('arenaSounds') || '{}');
+    delete saved[cardId];
+    try { localStorage.setItem('arenaSounds', JSON.stringify(saved)); } catch(e) {}
+  }
+};
+
+function vibrate(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch(e){} }
+window.toggleSound = () => {
+  Sound.enabled = !Sound.enabled;
+  document.getElementById('sound-btn').textContent = Sound.enabled ? '🔊 Som' : '🔇 Som';
+  if (Sound.enabled) { Sound.init(); Sound.resume(); Sound.click(); }
+};
+window.toggleFullscreen = () => {
+  const el = document.documentElement;
+  if (!document.fullscreenElement) (el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen)?.call(el).catch(()=>{});
+  else (document.exitFullscreen||document.webkitExitFullscreen)?.call(document);
+};
+
+let currentScreen = 'menu';
+window.showScreen = (name) => {
+  Sound.init(); Sound.resume(); Sound.click(); vibrate(10);
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  currentScreen = name;
+  if (name === 'menu') renderMenu();
+  if (name === 'map') renderMap();
+  if (name === 'deck') renderDeck();
+  if (name === 'sounds') renderSounds();
+  if (name === 'battle') {
+    requestAnimationFrame(()=>onResize());
+    setTimeout(()=>onResize(), 50);
+    setTimeout(()=>onResize(), 200);
+  }
+  document.getElementById('fullscreen-btn').style.display = name === 'menu' ? 'none' : 'flex';
+  document.getElementById('cam-reset-btn').classList.toggle('show', name === 'battle');
+};
+
+function renderMenu() {
+  document.getElementById('m-level').textContent = meta.level;
+  document.getElementById('m-xp').textContent = meta.xp;
+  document.getElementById('m-wins').textContent = meta.wins;
+  document.getElementById('m-gold').textContent = meta.gold;
+  const best = meta.infiniteBest || 0;
+  const cur = meta.infiniteCurrent || 1;
+  const infBtn = document.getElementById('inf-btn');
+  if (infBtn) infBtn.textContent = cur > 1 ? `♾️ Onda ${cur} (Recorde: ${best})` : `♾️ Modo Infinito (Recorde: ${best})`;
+}
+
+let pendingSoundCardId = null;
+function renderSounds() {
+  const list = document.getElementById('sounds-list');
+  list.innerHTML = '';
+  CARDS.forEach(card => {
+    const hasCustom = !!Sound.custom[card.id];
+    const el = document.createElement('div');
+    el.className = 'sound-item';
+    el.innerHTML = `<div class="snd-icon">${card.icon}</div>
+      <div class="snd-info"><div class="snd-name">${card.name}</div>
+      <div class="snd-status ${hasCustom?'custom':'default'}">${hasCustom ? '✅ Personalizado' : '🎵 Padrão'}</div></div>
+      <div class="snd-actions">
+        <button class="snd-btn play" data-action="play" data-card="${card.id}">▶</button>
+        <button class="snd-btn upload" data-action="upload" data-card="${card.id}">📁</button>
+        <button class="snd-btn reset" data-action="reset" data-card="${card.id}" ${hasCustom?'':'disabled'}>✕</button>
+      </div>`;
+    list.appendChild(el);
+  });
+  list.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cardId = btn.dataset.card, action = btn.dataset.action;
+      if (action === 'play') { Sound.init(); Sound.resume(); Sound.playCry(cardId); }
+      else if (action === 'upload') { pendingSoundCardId = cardId; document.getElementById('snd-file-input').click(); }
+      else if (action === 'reset') { Sound.resetCustom(cardId); renderSounds(); }
+    });
+  });
+}
+document.getElementById('snd-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file || !pendingSoundCardId) return;
+  const cardId = pendingSoundCardId;
+  pendingSoundCardId = null;
+  e.target.value = '';
+  if (file.size > 500*1024) {
+    if (!confirm('⚠️ Arquivo com ' + Math.round(file.size/1024) + 'KB. Pode não salvar. Continuar?')) return;
+  }
+  const ok = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      const saved = JSON.parse(localStorage.getItem('arenaSounds') || '{}');
+      saved[cardId] = dataUrl;
+      try {
+        localStorage.setItem('arenaSounds', JSON.stringify(saved));
+        Sound.custom[cardId] = dataUrl;
+        resolve(true);
+      } catch (err) { resolve(false); }
+    };
+    reader.onerror = () => resolve(false);
+    reader.readAsDataURL(file);
+  });
+  if (ok) { vibrate(50); renderSounds(); }
+  else alert('❌ Arquivo muito grande! Use um menor (menos de 200KB).');
+});
+
+function renderMap() {
+  document.getElementById('map-gold').textContent = meta.gold;
+  const grid = document.getElementById('map-grid'); grid.innerHTML = '';
+  CAMPAIGN.forEach((b, i) => {
+    const unlocked = i <= meta.campaignProgress;
+    const completed = i < meta.campaignProgress;
+    const el = document.createElement('div');
+    el.className = 'map-node' + (unlocked?'':' locked') + (completed?' completed':'');
+    el.innerHTML = `${completed?'<div class="badge">✅</div>':(!unlocked?'<div class="badge">🔒</div>':'')}
+      <div class="num">${i+1}</div><div class="name">${b.name}</div>
+      <div class="rewards">💰 ${b.gold.toLocaleString('pt-BR')}</div>`;
+    if (unlocked) el.addEventListener('click', () => startBattle(i));
+    grid.appendChild(el);
+  });
+}
+function renderDeck() {
+  document.getElementById('deck-gold').textContent = meta.gold;
+  const grid = document.getElementById('deck-grid'); grid.innerHTML = '';
+  CARDS.forEach(card => {
+    const lvl = getCardLevel(card.id), scaled = getCardWithLevel(card.id);
+    const maxed = lvl >= CARD_LEVEL_MAX, cost = maxed?0:UPGRADE_COST[lvl];
+    const canAfford = meta.gold >= cost;
+    const el = document.createElement('div'); el.className = 'deck-card';
+    el.innerHTML = `<div class="icon">${card.icon}</div><div class="name">${card.name}</div>
+      <div class="lvl">Nível ${lvl} / ${CARD_LEVEL_MAX}${card.flying ? ' ✈️' : ''}</div>
+      <div class="stats"><div class="s-hp">❤️ ${scaled.hp}</div><div class="s-dmg">⚔️ ${scaled.dmg}</div></div>
+      ${maxed?'<button class="upgrade-btn maxed" disabled>MÁXIMO</button>'
+        :`<button class="upgrade-btn" ${canAfford?'':'disabled'}>⬆️ Melhorar • 💰 ${cost.toLocaleString('pt-BR')}</button>`}`;
+    if (!maxed) el.querySelector('.upgrade-btn').addEventListener('click', () => upgradeCard(card.id));
+    grid.appendChild(el);
+  });
+}
+function upgradeCard(cardId) {
+  const lvl = getCardLevel(cardId);
+  if (lvl >= CARD_LEVEL_MAX) return;
+  const cost = UPGRADE_COST[lvl];
+  if (meta.gold < cost) return;
+  meta.gold -= cost; meta.cards[cardId].level = lvl+1;
+  saveMeta(); Sound.init(); Sound.resume(); Sound.upgrade(); vibrate(30); renderDeck();
+}
+
+const viewEl = document.getElementById('view');
+const scene = new THREE.Scene();
+const sceneGroup = new THREE.Group();
+scene.add(sceneGroup);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(1);
+viewEl.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sunLight = new THREE.DirectionalLight(0xfff8e8, 1.1);
+sunLight.position.set(30, 60, 20); scene.add(sunLight);
+const fillLight = new THREE.DirectionalLight(0x88aaff, 0.35);
+fillLight.position.set(-20, 15, -30); scene.add(fillLight);
+
+const groundCanvas = document.createElement('canvas');
+groundCanvas.width = 512; groundCanvas.height = 512;
+const groundTex = new THREE.CanvasTexture(groundCanvas);
+groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
+groundTex.repeat.set(4, 2.25);
+const groundMat = new THREE.MeshLambertMaterial({ map:groundTex });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 45), groundMat);
+ground.rotation.x = -Math.PI/2; sceneGroup.add(ground);
+
+const terrainMat = new THREE.MeshLambertMaterial({ color: 0x3a5a2a });
+const terrain = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), terrainMat);
+terrain.rotation.x = -Math.PI/2; terrain.position.y = -0.05; sceneGroup.add(terrain);
+
+const patchMat = new THREE.MeshLambertMaterial({ color: 0x2a4a1a });
+const patchGeo = new THREE.CircleGeometry(3, 6);
+for (let i = 0; i < 60; i++) {
+  const patch = new THREE.Mesh(patchGeo, patchMat);
+  patch.rotation.x = -Math.PI/2; patch.rotation.z = Math.random()*Math.PI*2;
+  patch.position.set((Math.random()-0.5)*300, -0.04, (Math.random()-0.5)*300);
+  patch.scale.setScalar(0.5 + Math.random()*1.5);
+  sceneGroup.add(patch);
+}
+function drawGroundPattern(a,b) {
+  const ctx = groundCanvas.getContext('2d'), cells = 8, cs = 512/cells;
+  for (let y=0;y<cells;y++) for (let x=0;x<cells;x++) {
+    ctx.fillStyle = (x+y)%2===0 ? a : b;
+    ctx.fillRect(x*cs, y*cs, cs, cs);
+  }
+  groundTex.needsUpdate = true;
+}
+
+const riverMat = new THREE.MeshLambertMaterial({ color:0x3a7ac4 });
+const river = new THREE.Mesh(new THREE.PlaneGeometry(6, 45), riverMat);
+river.rotation.x = -Math.PI/2; river.position.set(0, 0.06, 0); sceneGroup.add(river);
+const shimmerMat = new THREE.MeshBasicMaterial({ color:0x88ccff, transparent:true, opacity:0.4 });
+for (let i = 0; i < 12; i++) {
+  const shine = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.5), shimmerMat);
+  shine.rotation.x = -Math.PI/2;
+  shine.position.set((Math.random()-0.5)*4, 0.07, (Math.random()-0.5)*40);
+  sceneGroup.add(shine);
+}
+const dirtMat = new THREE.MeshLambertMaterial({ color:0x8b6a3a });
+BRIDGE_Y_A.forEach(by => {
+  const bz = (by - 225) * S;
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(70, 6), dirtMat);
+  path.rotation.x = -Math.PI/2; path.position.set(0, 0.03, bz); sceneGroup.add(path);
+});
+const bridgeDeckMat = new THREE.MeshLambertMaterial({ color:0x6a4a2a });
+const plankMat = new THREE.MeshLambertMaterial({ color:0x8b5a2b });
+const railMat = new THREE.MeshLambertMaterial({ color:0x5a3a1a });
+BRIDGE_Y_A.forEach(by => {
+  const bz = (by - 225) * S;
+  const bridge = new THREE.Group();
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(8, 0.1, 6), bridgeDeckMat);
+  deck.position.y = 0.05; bridge.add(deck);
+  for (let i = -2; i <= 2; i++) {
+    const plank = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.04, 0.9), plankMat);
+    plank.position.set(0, 0.11, i*1.1); bridge.add(plank);
+  }
+  [-1,1].forEach(side => {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(8, 0.08, 0.1), railMat);
+    rail.position.set(0, 0.7, side*2.7); bridge.add(rail);
+    for (let i = -3; i <= 3; i++) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.7, 0.15), railMat);
+      post.position.set(i*1.1, 0.35, side*2.7); bridge.add(post);
+    }
+  });
+  bridge.position.z = bz; sceneGroup.add(bridge);
+});
+
+const deployZone = new THREE.Mesh(new THREE.PlaneGeometry(28, 45),
+  new THREE.MeshBasicMaterial({ color:0x4a9aff, transparent:true, opacity:0.18, depthWrite:false, side:THREE.DoubleSide }));
+deployZone.rotation.x = -Math.PI/2; deployZone.position.set(-26, 0.02, 0); sceneGroup.add(deployZone);
+const arenaBorder = new THREE.LineSegments(
+  new THREE.EdgesGeometry(new THREE.PlaneGeometry(80, 45)),
+  new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:0.35 }));
+arenaBorder.rotation.x = -Math.PI/2; arenaBorder.position.y = 0.03; sceneGroup.add(arenaBorder);
+
+let skyDome = null;
+function makeSkyDome(top, bottom) {
+  const geo = new THREE.SphereGeometry(800, 24, 16);
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const cT = new THREE.Color(top), cB = new THREE.Color(bottom);
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i);
+    const t = THREE.MathUtils.clamp((y+200)/500, 0, 1);
+    const c = cB.clone().lerp(cT, t);
+    colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors:true, side:THREE.BackSide, fog:false }));
+}
+function makeGlowTexture(r,g,b) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createRadialGradient(64,64,0,64,64,64);
+  grad.addColorStop(0, `rgba(${r},${g},${b},1)`);
+  grad.addColorStop(0.25, `rgba(${r},${g},${b},0.6)`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  ctx.fillStyle = grad; ctx.fillRect(0,0,128,128);
+  return new THREE.CanvasTexture(c);
+}
+const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: makeGlowTexture(255,248,200), transparent:true, depthWrite:false, depthTest:false, fog:false }));
+sunSprite.scale.set(180, 180, 1); sunSprite.position.set(150, 200, 100); scene.add(sunSprite);
+scene.fog = new THREE.Fog(0x88ccff, 150, 600);
+scene.background = new THREE.Color(0x88ccff);
+
+let animatedEffects = [], effectMeshes = [];
+function clearEffects() {
+  for (const m of effectMeshes) if (m.parent) m.parent.remove(m);
+  effectMeshes = []; animatedEffects = [];
+}
+function track(mesh, parent) { (parent||sceneGroup).add(mesh); effectMeshes.push(mesh); return mesh; }
+function updateEffects(dt) {
+  const t = state.time/1000;
+  for (const e of animatedEffects) {
+    switch (e.type) {
+      case 'fall':
+        e.mesh.position.y -= e.speed * dt * 0.001;
+        if (e.mesh.position.y < -1) {
+          e.mesh.position.y = 25 + Math.random()*15;
+          e.mesh.position.x = (Math.random()-0.5)*100;
+          e.mesh.position.z = (Math.random()-0.5)*60;
+        }
+        if (e.spin) { e.mesh.rotation.x += dt*0.002; e.mesh.rotation.y += dt*0.003; }
+        break;
+      case 'orbit': {
+        const a = t*e.speed + e.phase;
+        e.mesh.position.x = e.center.x + Math.cos(a)*e.radius;
+        e.mesh.position.z = e.center.z + Math.sin(a*0.7)*e.radius;
+        e.mesh.position.y = e.center.y + Math.sin(a*1.3)*0.8;
+        if (e.mesh.material) e.mesh.material.opacity = 0.3 + (Math.sin(a*2.5)*0.5+0.5)*0.7;
+        break;
+      }
+      case 'pulse':
+        e.mesh.scale.setScalar(e.min + (Math.sin(t*e.speed + e.phase)*0.5+0.5)*(e.max-e.min));
+        break;
+      case 'wind':
+        e.mesh.position.x += e.speed * dt * 0.001;
+        if (e.mesh.position.x > 70) { e.mesh.position.x = -70; e.mesh.position.y = 1 + Math.random()*10; }
+        break;
+      case 'bubble':
+        e.mesh.position.y += e.speed * dt * 0.001;
+        if (e.mesh.position.y > e.maxY) {
+          e.mesh.position.y = 0;
+          e.mesh.position.x = e.center.x + (Math.random()-0.5)*3;
+          e.mesh.position.z = e.center.z + (Math.random()-0.5)*3;
+        }
+        break;
+      case 'birdOrbit': {
+        const ang = t*e.speed + e.phase;
+        e.mesh.position.x = Math.cos(ang)*e.radius;
+        e.mesh.position.z = Math.sin(ang)*e.radius;
+        e.mesh.position.y = e.baseY + Math.sin(ang*2)*e.bob;
+        e.mesh.rotation.y = -ang + Math.PI/2;
+        break;
+      }
+      case 'sway':
+        e.mesh.rotation.z = Math.sin(t*e.speed + e.phase)*e.amplitude;
+        break;
+      case 'explosion':
+        e.elapsed += dt;
+        const p = e.elapsed / e.life;
+        e.mesh.scale.setScalar(1 + p * 8);
+        e.mesh.material.opacity = 1 - p;
+        if (p >= 1) { e.remove = true; sceneGroup.remove(e.mesh); }
+        break;
+      case 'lightning':
+        e.elapsed += dt;
+        e.mesh.material.opacity = Math.max(0, 1 - e.elapsed/e.life);
+        if (e.elapsed >= e.life) {
+          e.remove = true;
+          if (e.mesh.parent) e.mesh.parent.remove(e.mesh);
+          if (e.mesh.geometry) e.mesh.geometry.dispose();
+          if (e.mesh.material) e.mesh.material.dispose();
+        }
+        break;
+    }
+  }
+  animatedEffects = animatedEffects.filter(e => !e.remove);
+}
+function addFalling(color, count, opts={}) {
+  const geo = opts.crystal ? new THREE.OctahedronGeometry(0.15, 0) : new THREE.SphereGeometry(0.14, 4, 4);
+  for (let i = 0; i < count; i++) {
+    const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.85 }));
+    mesh.position.set((Math.random()-0.5)*100, Math.random()*25, (Math.random()-0.5)*60);
+    track(mesh);
+    animatedEffects.push({ type:'fall', mesh, speed:(opts.speed||2)+Math.random()*2, spin:opts.spin!==false });
+  }
+}
+function addLeaves(color, count) {
+  for (let i = 0; i < count; i++) {
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.3),
+      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.9, side:THREE.DoubleSide }));
+    mesh.position.set((Math.random()-0.5)*100, 5+Math.random()*20, (Math.random()-0.5)*60);
+    track(mesh);
+    animatedEffects.push({ type:'fall', mesh, speed:1+Math.random()*1.5, spin:true });
+  }
+}
+function addGlowParticles(color, count, size=0.16) {
+  for (let i = 0; i < count; i++) {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(size, 6, 6),
+      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.9 }));
+    const a = Math.random()*Math.PI*2, r = 8 + Math.random()*35;
+    const center = { x:Math.cos(a)*r, z:Math.sin(a)*r*0.6, y:1+Math.random()*3 };
+    mesh.position.set(center.x, center.y, center.z);
+    track(mesh);
+    animatedEffects.push({ type:'orbit', mesh, center, radius:2+Math.random()*3, speed:0.3+Math.random()*0.5, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addButterflies(count) {
+  const colors = [0xffcc44, 0xff88cc, 0x88ccff, 0xff8844];
+  for (let i = 0; i < count; i++) {
+    const g = new THREE.Group();
+    const c = colors[i%colors.length];
+    const wL = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.3),
+      new THREE.MeshBasicMaterial({ color:c, side:THREE.DoubleSide, transparent:true, opacity:0.9 }));
+    wL.position.x = -0.2; g.add(wL);
+    const wR = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.3),
+      new THREE.MeshBasicMaterial({ color:c, side:THREE.DoubleSide, transparent:true, opacity:0.9 }));
+    wR.position.x = 0.2; g.add(wR);
+    track(g);
+    animatedEffects.push({ type:'orbit', mesh:g,
+      center:{ x:(Math.random()-0.5)*60, z:(Math.random()-0.5)*40, y:2+Math.random()*3 },
+      radius:3+Math.random()*4, speed:0.5+Math.random()*0.5, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addWaterfall(x, z, h) {
+  const rock = new THREE.Mesh(new THREE.BoxGeometry(5, h, 5), new THREE.MeshLambertMaterial({ color:0x6a6a6a }));
+  rock.position.set(x, h/2, z); sceneryGroup.add(rock);
+  const stream = new THREE.Mesh(new THREE.PlaneGeometry(3, h*0.85),
+    new THREE.MeshBasicMaterial({ color:0xcceeff, transparent:true, opacity:0.5, side:THREE.DoubleSide }));
+  stream.position.set(x+2.7, h*0.5, z); stream.rotation.y = Math.PI/2; sceneryGroup.add(stream);
+  const foam = new THREE.Mesh(new THREE.CircleGeometry(3.5, 10),
+    new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.7 }));
+  foam.rotation.x = -Math.PI/2; foam.position.set(x+3, 0.15, z); sceneryGroup.add(foam);
+  animatedEffects.push({ type:'pulse', mesh:foam, min:0.9, max:1.15, speed:3, phase:0 });
+  for (let i = 0; i < (isMobile?6:12); i++) {
+    const drop = new THREE.Mesh(new THREE.SphereGeometry(0.15, 4, 4),
+      new THREE.MeshBasicMaterial({ color:0xddeeff, transparent:true, opacity:0.9 }));
+    drop.position.set(x+2.8+(Math.random()-0.5)*0.5, h-Math.random()*h, z+(Math.random()-0.5)*3);
+    track(drop);
+    animatedEffects.push({ type:'fall', mesh:drop, speed:10+Math.random()*5, spin:false });
+  }
+}
+function addTorches(count) {
+  for (let i = 0; i < count; i++) {
+    const angle = (i/count)*Math.PI*2;
+    const x = Math.cos(angle)*55, z = Math.sin(angle)*35;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,4,5),
+      new THREE.MeshLambertMaterial({ color:0x4a2a1a }));
+    post.position.set(x, 2, z); sceneryGroup.add(post);
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 6),
+      new THREE.MeshBasicMaterial({ color:0xff8833 }));
+    flame.position.set(x, 4.7, z); track(flame);
+    animatedEffects.push({ type:'pulse', mesh:flame, min:0.85, max:1.3, speed:8, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addGlowCrystals(count, color) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random()*Math.PI*2, r = 30+Math.random()*40;
+    const x = Math.cos(a)*r, z = Math.sin(a)*r*0.6, h = 1.5+Math.random()*3;
+    const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.6+Math.random()*0.5),
+      new THREE.MeshBasicMaterial({ color }));
+    c.position.set(x, h/2+0.5, z); sceneryGroup.add(c);
+    animatedEffects.push({ type:'pulse', mesh:c, min:0.85, max:1.2, speed:2, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addBubbles(count, color) {
+  for (let i = 0; i < count; i++) {
+    const size = 0.15 + Math.random()*0.2;
+    const b = new THREE.Mesh(new THREE.SphereGeometry(size, 6, 6),
+      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.6 }));
+    const cx = (Math.random()-0.5)*100, cz = (Math.random()-0.5)*60;
+    b.position.set(cx, Math.random()*2, cz); track(b);
+    animatedEffects.push({ type:'bubble', mesh:b, center:{ x:cx, z:cz }, maxY:4+Math.random()*3, speed:0.5+Math.random()*0.5 });
+  }
+}
+function addWindLines(count) {
+  for (let i = 0; i < count; i++) {
+    const geo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-1.5, 0, 0), new THREE.Vector3(1.5, 0, 0)
+    ]);
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:0.35 }));
+    line.position.set((Math.random()-0.5)*120, 1+Math.random()*12, (Math.random()-0.5)*60);
+    track(line);
+    animatedEffects.push({ type:'wind', mesh:line, speed:20+Math.random()*20 });
+  }
+}
+function addBirds(count) {
+  for (let i = 0; i < count; i++) {
+    const g = new THREE.Group();
+    const m = new THREE.MeshBasicMaterial({ color:0x222222 });
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.8, 4), m);
+    body.rotation.x = Math.PI/2; g.add(body);
+    const wL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.06, 0.25), m);
+    wL.position.x = -0.5; g.add(wL);
+    const wR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.06, 0.25), m);
+    wR.position.x = 0.5; g.add(wR);
+    track(g);
+    animatedEffects.push({ type:'birdOrbit', mesh:g, radius:40+Math.random()*30, baseY:18+Math.random()*10,
+      bob:1.5, speed:0.08+Math.random()*0.06, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addMist(count) {
+  for (let i = 0; i < count; i++) {
+    const mist = new THREE.Mesh(new THREE.PlaneGeometry(15+Math.random()*10, 8+Math.random()*5),
+      new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.15, depthWrite:false, side:THREE.DoubleSide }));
+    mist.rotation.x = -Math.PI/2;
+    mist.position.set((Math.random()-0.5)*100, 0.5+Math.random()*1.5, (Math.random()-0.5)*60);
+    track(mist);
+    animatedEffects.push({ type:'wind', mesh:mist, speed:3+Math.random()*3 });
+  }
+}
+function addGlowMushrooms(count) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random()*Math.PI*2, r = 40+Math.random()*30;
+    const x = Math.cos(a)*r, z = Math.sin(a)*r*0.6;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 0.6, 5),
+      new THREE.MeshLambertMaterial({ color:0xddddaa }));
+    stem.position.set(x, 0.3, z); sceneryGroup.add(stem);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6, 0, Math.PI*2, 0, Math.PI/2),
+      new THREE.MeshBasicMaterial({ color:0x66ffaa }));
+    cap.position.set(x, 0.6, z); track(cap);
+    animatedEffects.push({ type:'pulse', mesh:cap, min:0.9, max:1.15, speed:2, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addDust(count) {
+  for (let i = 0; i < count; i++) {
+    const d = new THREE.Mesh(new THREE.SphereGeometry(0.1, 4, 4),
+      new THREE.MeshBasicMaterial({ color:0xccccaa, transparent:true, opacity:0.5 }));
+    d.position.set((Math.random()-0.5)*100, 0.5+Math.random()*12, (Math.random()-0.5)*60);
+    track(d);
+    animatedEffects.push({ type:'orbit', mesh:d,
+      center:{ x:d.position.x, y:d.position.y, z:d.position.z },
+      radius:1.5+Math.random()*2, speed:0.15+Math.random()*0.2, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addDebris(count) {
+  for (let i = 0; i < count; i++) {
+    const d = new THREE.Mesh(new THREE.BoxGeometry(0.3+Math.random()*0.3, 0.1, 0.2+Math.random()*0.2),
+      new THREE.MeshLambertMaterial({ color:0x8a8a7a }));
+    d.position.set((Math.random()-0.5)*100, 1+Math.random()*8, (Math.random()-0.5)*60);
+    track(d);
+    animatedEffects.push({ type:'orbit', mesh:d,
+      center:{ x:d.position.x, y:d.position.y, z:d.position.z },
+      radius:3+Math.random()*4, speed:0.2+Math.random()*0.3, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addSandSwirls(count) {
+  for (let i = 0; i < count; i++) {
+    const s = new THREE.Mesh(new THREE.CircleGeometry(0.4+Math.random()*0.4, 6),
+      new THREE.MeshBasicMaterial({ color:0xe0c080, transparent:true, opacity:0.5, side:THREE.DoubleSide }));
+    s.rotation.x = -Math.PI/2;
+    s.position.set((Math.random()-0.5)*100, 0.3+Math.random()*1, (Math.random()-0.5)*60);
+    track(s);
+    animatedEffects.push({ type:'wind', mesh:s, speed:15+Math.random()*15 });
+  }
+}
+function addSunRays() {
+  for (let i = 0; i < 5; i++) {
+    const ray = new THREE.Mesh(new THREE.PlaneGeometry(2, 80),
+      new THREE.MeshBasicMaterial({ color:0xffeeaa, transparent:true, opacity:0.08, depthWrite:false, side:THREE.DoubleSide }));
+    ray.position.set(-50+i*8, 20, -60+i*5);
+    ray.rotation.z = 0.3+i*0.05; track(ray);
+    animatedEffects.push({ type:'sway', mesh:ray, amplitude:0.05, speed:0.5+i*0.1, phase:i });
+  }
+}
+function addIceCrystals(count) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random()*Math.PI*2, r = 40+Math.random()*30;
+    const x = Math.cos(a)*r, z = Math.sin(a)*r*0.6, h = 2+Math.random()*4;
+    const c = new THREE.Mesh(new THREE.ConeGeometry(0.5, h, 6),
+      new THREE.MeshLambertMaterial({ color:0xcceeff, emissive:0x2255aa, transparent:true, opacity:0.85 }));
+    c.position.set(x, h/2, z); sceneryGroup.add(c);
+    animatedEffects.push({ type:'pulse', mesh:c, min:0.95, max:1.05, speed:1, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addGoldSparkles(count) {
+  for (let i = 0; i < count; i++) {
+    const s = new THREE.Mesh(new THREE.SphereGeometry(0.12, 4, 4),
+      new THREE.MeshBasicMaterial({ color:0xffd966, transparent:true, opacity:0.9 }));
+    s.position.set((Math.random()-0.5)*100, 1+Math.random()*15, (Math.random()-0.5)*60);
+    track(s);
+    animatedEffects.push({ type:'orbit', mesh:s,
+      center:{ x:s.position.x, y:s.position.y, z:s.position.z },
+      radius:2+Math.random()*3, speed:2+Math.random()*2, phase:Math.random()*Math.PI*2 });
+  }
+}
+function addBanners(count) {
+  for (let i = 0; i < count; i++) {
+    const a = (i/count)*Math.PI*2;
+    const x = Math.cos(a)*50, z = Math.sin(a)*32;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,5,5),
+      new THREE.MeshLambertMaterial({ color:0x5a3a1a }));
+    pole.position.set(x, 2.5, z); sceneryGroup.add(pole);
+    const banner = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 2),
+      new THREE.MeshLambertMaterial({ color:0x8a2a2a, side:THREE.DoubleSide }));
+    banner.position.set(x+0.85, 3.5, z); track(banner);
+    animatedEffects.push({ type:'sway', mesh:banner, amplitude:0.15, speed:2+Math.random(), phase:Math.random()*Math.PI*2 });
+  }
+}
+
+let sceneryGroup = new THREE.Group();
+sceneGroup.add(sceneryGroup);
+function buildScenery(theme) {
+  sceneGroup.remove(sceneryGroup);
+  while (sceneryGroup.children.length) sceneryGroup.remove(sceneryGroup.children[0]);
+  sceneryGroup = new THREE.Group();
+  clearEffects();
+  if (skyDome) scene.remove(skyDome);
+  skyDome = makeSkyDome(theme.skyTop||theme.sky, theme.sky);
+  scene.add(skyDome);
+  sunSprite.material.map = makeGlowTexture(...hexToRgb(theme.sun||'#fff'));
+  sunSprite.material.needsUpdate = true;
+  drawGroundPattern(theme.groundA, theme.groundB);
+  terrainMat.color = new THREE.Color(theme.groundB).multiplyScalar(0.55);
+  patchMat.color = new THREE.Color(theme.groundB).multiplyScalar(0.4);
+  sunLight.color = new THREE.Color(theme.sun);
+  scene.fog.color = new THREE.Color(theme.fog);
+  scene.background = new THREE.Color(theme.sky);
+  const mountainMats = theme.mountains.map(c => new THREE.MeshLambertMaterial({ color:c, flatShading:true }));
+  const snowMat = new THREE.MeshLambertMaterial({ color:theme.mountainTop, flatShading:true });
+  for (let i = 0; i < 14; i++) {
+    const angle = (i/14)*Math.PI*2 + Math.random()*0.2;
+    const radius = 130 + Math.random()*40;
+    const x = Math.cos(angle)*radius, z = Math.sin(angle)*radius;
+    const h = 55+Math.random()*40, w = 22+Math.random()*15;
+    const m = new THREE.Mesh(new THREE.ConeGeometry(w, h, 5+Math.floor(Math.random()*3), 1), mountainMats[i%mountainMats.length]);
+    m.position.set(x, h/2-3, z); m.rotation.y = Math.random()*Math.PI;
+    sceneryGroup.add(m);
+    if (theme.snow && h > 70) {
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(w*0.35, h*0.3, 5, 1), snowMat);
+      cap.position.set(x, h-h*0.15-3, z); cap.rotation.y = m.rotation.y;
+      sceneryGroup.add(cap);
+    }
+  }
+  for (let i = 0; i < 10; i++) {
+    const angle = (i/10)*Math.PI*2 + Math.random()*0.3;
+    const radius = 95 + Math.random()*20;
+    const x = Math.cos(angle)*radius, z = Math.sin(angle)*radius;
+    const h = 25+Math.random()*25, w = 12+Math.random()*10;
+    const m = new THREE.Mesh(new THREE.ConeGeometry(w, h, 6, 1), mountainMats[(i+1)%mountainMats.length]);
+    m.position.set(x, h/2-2, z); m.rotation.y = Math.random()*Math.PI;
+    sceneryGroup.add(m);
+  }
+  const trunkMat = new THREE.MeshLambertMaterial({ color:theme.trunk });
+  const leafMat = new THREE.MeshLambertMaterial({ color:theme.leaf, flatShading:true });
+  for (let i = 0; i < 35; i++) {
+    let x, z, tries = 0;
+    do { x = (Math.random()-0.5)*110; z = (Math.random()-0.5)*78; tries++; }
+    while (Math.abs(x) < 42 && Math.abs(z) < 25 && tries < 20);
+    const tree = new THREE.Group();
+    const h = 3+Math.random()*3;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, h*0.5, 5), trunkMat);
+    trunk.position.y = h*0.25; tree.add(trunk);
+    if (i%3 === 0) {
+      const f = new THREE.Mesh(new THREE.SphereGeometry(1.5, 6, 5), leafMat);
+      f.position.y = h*0.7+1; tree.add(f);
+      const f2 = new THREE.Mesh(new THREE.SphereGeometry(1.1, 6, 5), leafMat);
+      f2.position.set(0.7, h*0.7+1.6, 0.2); tree.add(f2);
+    } else {
+      const f1 = new THREE.Mesh(new THREE.ConeGeometry(1.4, h*0.7, 6), leafMat);
+      f1.position.y = h*0.5+h*0.35; tree.add(f1);
+      const f2 = new THREE.Mesh(new THREE.ConeGeometry(1.0, h*0.5, 6), leafMat);
+      f2.position.y = h*0.5+h*0.6; tree.add(f2);
+    }
+    tree.position.set(x, 0, z); tree.rotation.y = Math.random()*Math.PI*2;
+    sceneryGroup.add(tree);
+  }
+  const rockMat = new THREE.MeshLambertMaterial({ color:theme.rock, flatShading:true });
+  for (let i = 0; i < 25; i++) {
+    let x, z, tries = 0;
+    do { x = (Math.random()-0.5)*100; z = (Math.random()-0.5)*70; tries++; }
+    while (Math.abs(x) < 42 && Math.abs(z) < 25 && tries < 20);
+    const size = 0.6+Math.random()*1.5;
+    const r = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 0), rockMat);
+    r.position.set(x, size*0.55, z);
+    r.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+    sceneryGroup.add(r);
+  }
+  const cloudMat = new THREE.MeshLambertMaterial({ color:0xffffff, transparent:true, opacity:0.85, flatShading:true });
+  for (let i = 0; i < 7; i++) {
+    const cloud = new THREE.Group();
+    const pieces = 2+Math.floor(Math.random()*3);
+    for (let j = 0; j < pieces; j++) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(4+Math.random()*4, 6, 4), cloudMat);
+      s.position.set((j-pieces/2)*5, Math.random()*2, Math.random()*3);
+      s.scale.y = 0.5; cloud.add(s);
+    }
+    const a = Math.random()*Math.PI*2, r = 80+Math.random()*100;
+    cloud.position.set(Math.cos(a)*r, 40+Math.random()*30, Math.sin(a)*r);
+    track(cloud, scene);
+    animatedEffects.push({ type:'wind', mesh:cloud, speed:1+Math.random()*2 });
+  }
+  const fx = theme.fx || [];
+  const m = isMobile ? 0.6 : 1;
+  if (fx.includes('leaves')) addLeaves(theme.leaf, Math.floor(20*m));
+  if (fx.includes('butterflies')) addButterflies(Math.floor(5*m));
+  if (fx.includes('waterfall')) addWaterfall(-90, -50, 35);
+  if (fx.includes('birds')) addBirds(Math.floor(4*m));
+  if (fx.includes('fireflies')) addGlowParticles(fx.includes('glowMushrooms')?0x66ffaa:0xffee88, Math.floor(14*m));
+  if (fx.includes('mist')) addMist(Math.floor(5*m));
+  if (fx.includes('glowMushrooms')) addGlowMushrooms(Math.floor(6*m));
+  if (fx.includes('wind')) addWindLines(Math.floor(8*m));
+  if (fx.includes('bubbles')) addBubbles(Math.floor(12*m), 0x99ddaa);
+  if (fx.includes('dust')) addDust(Math.floor(15*m));
+  if (fx.includes('torches')) addTorches(6);
+  if (fx.includes('debris')) addDebris(Math.floor(6*m));
+  if (fx.includes('snow')) addFalling(0xffffff, Math.floor(25*m), { speed:1.5, spin:false });
+  if (fx.includes('iceCrystals')) addIceCrystals(Math.floor(8*m));
+  if (fx.includes('sand')) addSandSwirls(Math.floor(10*m));
+  if (fx.includes('sunRays')) addSunRays();
+  if (fx.includes('glowCrystals')) addGlowCrystals(Math.floor(8*m), 0xaa66ff);
+  if (fx.includes('drips')) addFalling(0x88ccff, Math.floor(8*m), { speed:8, spin:false });
+  if (fx.includes('goldSparkles')) addGoldSparkles(Math.floor(15*m));
+  if (fx.includes('banners')) addBanners(6);
+  sceneGroup.add(sceneryGroup);
+}
+function hexToRgb(hex) {
+  if (typeof hex === 'string') {
+    const h = hex.replace('#','');
+    return [parseInt(h.substr(0,2),16), parseInt(h.substr(2,2),16), parseInt(h.substr(4,2),16)];
+  }
+  return [255, 255, 255];
+}
+
+function makeShadow(r) {
+  const m = new THREE.Mesh(new THREE.CircleGeometry(r, 12),
+    new THREE.MeshBasicMaterial({ color:0x000000, transparent:true, opacity:0.28, depthWrite:false }));
+  m.rotation.x = -Math.PI/2; m.position.y = 0.05; return m;
+}
+function makeHpBar(w, h) {
+  const g = new THREE.Group();
+  const bg = new THREE.Sprite(new THREE.SpriteMaterial({ color:0x000000, opacity:0.65, transparent:true, depthTest:false, depthWrite:false }));
+  bg.scale.set(w, h, 1); g.add(bg);
+  const fill = new THREE.Sprite(new THREE.SpriteMaterial({ color:0x7ac47a, depthTest:false, depthWrite:false }));
+  fill.scale.set(w, h*0.9, 1); fill.position.z = 0.01; g.add(fill);
+  g.renderOrder = 999;
+  g.userData = { fill, width:w };
+  return g;
+}
+function updateHpBar(bar, pct, color) {
+  const { fill, width } = bar.userData;
+  if (color !== undefined) fill.material.color.setHex(color);
+  fill.scale.x = Math.max(0.001, width*pct);
+  fill.position.x = -(width*(1-pct))/2;
+}
+
+// ===== CASTELO COM MAGO GUARDIÃO =====
+function makeCastle(team) {
+  const g = new THREE.Group();
+  const isP = team === 'player';
+  const bodyColor = isP ? 0x4a7ac4 : 0xc44a4a;
+  const roofColor = isP ? 0x2a4a94 : 0x942a3a;
+  const energyColor = isP ? 0x66aaff : 0xff6666;
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.8, 1.3, 8), new THREE.MeshLambertMaterial({ color: 0x777788 }));
+  base.position.y = 0.65; g.add(base);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.1, 4.2, 8), new THREE.MeshLambertMaterial({ color: bodyColor }));
+  body.position.y = 3.4; g.add(body);
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(2.15, 2.15, 0.35, 8), new THREE.MeshLambertMaterial({ color: roofColor }));
+  ring.position.y = 5.3; g.add(ring);
+  const platform = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.85, 0.45, 8), new THREE.MeshLambertMaterial({ color: 0x888899 }));
+  platform.position.y = 5.85; g.add(platform);
+  // Mago no topo
+  const wiz = new THREE.Group();
+  const robe = new THREE.Mesh(new THREE.ConeGeometry(0.85, 1.7, 8), new THREE.MeshLambertMaterial({ color: roofColor }));
+  robe.position.y = 0.85; wiz.add(robe);
+  const wHead = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), new THREE.MeshLambertMaterial({ color: 0xffdbac }));
+  wHead.position.y = 1.9; wiz.add(wHead);
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.09, 8), new THREE.MeshLambertMaterial({ color: roofColor }));
+  brim.position.y = 2.05; wiz.add(brim);
+  const hat = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.2, 8), new THREE.MeshLambertMaterial({ color: roofColor }));
+  hat.position.y = 2.55; wiz.add(hat);
+  const beard = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 5), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+  beard.position.set(0, 1.6, 0.2); beard.rotation.x = 0.2; wiz.add(beard);
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.1, 6), new THREE.MeshLambertMaterial({ color: 0x8b5a2b }));
+  staff.position.set(0.55, 1.1, 0); wiz.add(staff);
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8),
+    new THREE.MeshLambertMaterial({ color: energyColor, emissive: energyColor, emissiveIntensity: 0.8 }));
+  orb.position.set(0.55, 2.25, 0); wiz.add(orb);
+  wiz.position.y = 5.9;
+  g.add(wiz);
+  // Cristal de aura no centro
+  const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.55),
+    new THREE.MeshLambertMaterial({ color: energyColor, emissive: energyColor, emissiveIntensity: 0.7 }));
+  crystal.position.set(0, 8.9, 0);
+  g.add(crystal);
+  const hpBar = makeHpBar(4, 0.32);
+  hpBar.position.y = 10.2; g.add(hpBar);
+  g.userData = { crystal, hpBar, wizard: wiz, orb, hat };
+  return g;
+}
+
+// ===== TESLA (torre de raio) =====
+function makeTesla(team) {
+  const g = new THREE.Group();
+  const isP = team === 'player';
+  const metalColor = 0x888899;
+  const energyColor = isP ? 0x66ddff : 0xff6666;
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.35, 0.7, 8), new THREE.MeshLambertMaterial({ color: 0x666677 }));
+  base.position.y = 0.35; g.add(base);
+  const coil = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.7, 2, 8), new THREE.MeshLambertMaterial({ color: 0x8b6a3a }));
+  coil.position.y = 1.7; g.add(coil);
+  for (let i = 0; i < 5; i++) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.09, 6, 14), new THREE.MeshLambertMaterial({ color: metalColor }));
+    ring.rotation.x = Math.PI/2;
+    ring.position.y = 0.9 + i * 0.4;
+    g.add(ring);
+  }
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.58, 12, 12),
+    new THREE.MeshLambertMaterial({ color: energyColor, emissive: energyColor, emissiveIntensity: 0.7 }));
+  sphere.position.y = 3.1; g.add(sphere);
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.07, 6, 16),
+    new THREE.MeshBasicMaterial({ color: energyColor, transparent: true, opacity: 0.7 }));
+  halo.rotation.x = Math.PI/2;
+  halo.position.y = 3.1;
+  g.add(halo);
+  const hpBar = makeHpBar(1.8, 0.18);
+  hpBar.position.y = 4.3; g.add(hpBar);
+  g.userData = { sphere, halo, hpBar };
+  return g;
+}
+
+// ===== PERSONAGENS =====
+function makeCharacter(cardId, team) {
+  const g = new THREE.Group();
+  const isP = team === 'player';
+  const C = isP ? 0x3a6ac4 : 0xc43a4a;
+  const D = isP ? 0x2a4a94 : 0x942a3a;
+  const parts = {};
+  let topY = 2.2;
+  const mCloth = new THREE.MeshLambertMaterial({ color:C });
+  const mDark  = new THREE.MeshLambertMaterial({ color:D });
+  const mSkin  = new THREE.MeshLambertMaterial({ color:0xffdbac });
+  const mMetal = new THREE.MeshLambertMaterial({ color:0xbbbbbb, emissive:0x222222 });
+  const mWood  = new THREE.MeshLambertMaterial({ color:0x8b5a2b });
+  const mGreen = new THREE.MeshLambertMaterial({ color:0x6abf4a });
+  const mBrown = new THREE.MeshLambertMaterial({ color:0x8b6a3a });
+  const mPurple= new THREE.MeshLambertMaterial({ color:0x7a4aa4 });
+  const mRed   = new THREE.MeshLambertMaterial({ color:0xdd3333 });
+  const mWhite = new THREE.MeshLambertMaterial({ color:0xffffff });
+  const mBlonde= new THREE.MeshLambertMaterial({ color:0xffdd66 });
+  const mFire  = new THREE.MeshLambertMaterial({ color:0xff6622, emissive:0xff4400 });
+  const mEye   = new THREE.MeshLambertMaterial({ color:0x111111 });
+  const mEyeRed= new THREE.MeshLambertMaterial({ color:0xff2020, emissive:0xff0000 });
+  const add = (geo, mat, x, y, z) => {
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x||0, y||0, z||0); g.add(mesh); return mesh;
+  };
+  const limb = (mat, x, y, len) => {
+    const p = new THREE.Group(); p.position.set(x, y, 0);
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, len, 0.18), mat);
+    mesh.position.y = -len/2; p.add(mesh); g.add(p); return p;
+  };
+  if (cardId === 'knight') {
+    add(new THREE.BoxGeometry(0.7,0.9,0.5), mCloth, 0, 1.0);
+    add(new THREE.SphereGeometry(0.3,8,8), mSkin, 0, 1.75);
+    add(new THREE.SphereGeometry(0.33,8,8,0,Math.PI*2,0,Math.PI*0.55), mMetal, 0, 1.78);
+    parts.rightArm = limb(mCloth, 0.5, 1.3, 0.6);
+    parts.leftArm = limb(mCloth, -0.5, 1.3, 0.6);
+    const sw = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.85,0.08), mMetal);
+    sw.position.y = -0.75; parts.rightArm.add(sw);
+    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.06,8), mMetal);
+    sh.rotation.z = Math.PI/2; sh.position.set(0,-0.5,0.1); parts.leftArm.add(sh);
+    parts.rightLeg = limb(mDark, 0.18, 0.55, 0.55);
+    parts.leftLeg = limb(mDark, -0.18, 0.55, 0.55);
+    g.add(makeShadow(0.5)); topY = 2.1;
+  } else if (cardId === 'archer') {
+    add(new THREE.BoxGeometry(0.55,0.75,0.4), mGreen, 0, 0.9);
+    add(new THREE.SphereGeometry(0.25,8,8), mSkin, 0, 1.5);
+    add(new THREE.ConeGeometry(0.32,0.45,6), mGreen, 0, 1.68);
+    parts.rightArm = limb(mSkin, 0.42, 1.15, 0.5);
+    parts.leftArm = limb(mSkin, -0.42, 1.15, 0.5);
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.32,0.035,5,10,Math.PI), mWood);
+    bow.rotation.z = Math.PI/2; bow.position.set(0,-0.45,0.12); parts.leftArm.add(bow);
+    parts.rightLeg = limb(mDark, 0.14, 0.55, 0.5);
+    parts.leftLeg = limb(mDark, -0.14, 0.55, 0.5);
+    g.add(makeShadow(0.4)); topY = 1.9;
+  } else if (cardId === 'giant') {
+    add(new THREE.BoxGeometry(1.1,1.3,0.8), mBrown, 0, 1.3);
+    add(new THREE.SphereGeometry(0.45,10,10), mSkin, 0, 2.25);
+    const eyeGeo = new THREE.SphereGeometry(0.06,5,5);
+    add(eyeGeo, mEye, -0.15, 2.3, 0.4);
+    add(eyeGeo, mEye, 0.15, 2.3, 0.4);
+    parts.rightArm = limb(mBrown, 0.75, 1.7, 0.9);
+    parts.leftArm = limb(mBrown, -0.75, 1.7, 0.9);
+    const fGeo = new THREE.SphereGeometry(0.22,6,6);
+    const fL = new THREE.Mesh(fGeo, mSkin); fL.position.y = -0.9; parts.leftArm.add(fL);
+    const fR = new THREE.Mesh(fGeo, mSkin); fR.position.y = -0.9; parts.rightArm.add(fR);
+    parts.rightLeg = limb(mBrown, 0.28, 0.9, 0.7);
+    parts.leftLeg = limb(mBrown, -0.28, 0.9, 0.7);
+    g.add(makeShadow(0.8)); topY = 2.9;
+  } else if (cardId === 'goblins') {
+    add(new THREE.BoxGeometry(0.35,0.4,0.3), mGreen, 0, 0.6);
+    add(new THREE.SphereGeometry(0.22,6,6), mGreen, 0, 1.0);
+    const earGeo = new THREE.ConeGeometry(0.08,0.25,4);
+    const eL = add(earGeo, mGreen, -0.22, 1.05, 0); eL.rotation.z = 0.5;
+    const eR = add(earGeo, mGreen, 0.22, 1.05, 0); eR.rotation.z = -0.5;
+    const eyeGeo = new THREE.SphereGeometry(0.04,4,4);
+    add(eyeGeo, mEyeRed, -0.08, 1.05, 0.2);
+    add(eyeGeo, mEyeRed, 0.08, 1.05, 0.2);
+    parts.rightArm = limb(mGreen, 0.25, 0.8, 0.35);
+    parts.leftArm = limb(mGreen, -0.25, 0.8, 0.35);
+    const club = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.1,0.4,4), mWood);
+    club.position.y = -0.4; parts.rightArm.add(club);
+    parts.rightLeg = limb(mGreen, 0.1, 0.35, 0.3);
+    parts.leftLeg = limb(mGreen, -0.1, 0.35, 0.3);
+    g.add(makeShadow(0.3)); topY = 1.4;
+  } else if (cardId === 'musketeer') {
+    add(new THREE.BoxGeometry(0.6,0.85,0.42), mPurple, 0, 1.0);
+    add(new THREE.SphereGeometry(0.28,8,8), mSkin, 0, 1.65);
+    add(new THREE.CylinderGeometry(0.35,0.35,0.12,8), mMetal, 0, 1.85);
+    add(new THREE.ConeGeometry(0.08,0.3,4), mRed, 0, 2.05);
+    parts.rightArm = limb(mPurple, 0.42, 1.25, 0.55);
+    parts.leftArm = limb(mPurple, -0.42, 1.25, 0.55);
+    const rifle = new THREE.Group();
+    const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.8), mMetal);
+    barrel.position.z = 0.3; rifle.add(barrel);
+    const stock = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.15,0.3), mWood);
+    stock.position.z = -0.2; rifle.add(stock);
+    rifle.position.set(0,-0.55,0.1); parts.rightArm.add(rifle);
+    parts.rightLeg = limb(mDark, 0.16, 0.6, 0.5);
+    parts.leftLeg = limb(mDark, -0.16, 0.6, 0.5);
+    g.add(makeShadow(0.45)); topY = 2.1;
+  } else if (cardId === 'wizard') {
+    add(new THREE.ConeGeometry(0.5,1.3,6), mPurple, 0, 0.85);
+    add(new THREE.SphereGeometry(0.25,8,8), mSkin, 0, 1.65);
+    add(new THREE.ConeGeometry(0.38,0.7,6), mPurple, 0, 2.0);
+    add(new THREE.CylinderGeometry(0.42,0.42,0.06,8), mPurple, 0, 1.75);
+    const beard = add(new THREE.ConeGeometry(0.22,0.4,5), mWhite, 0, 1.45, 0.2);
+    beard.rotation.x = 0.2;
+    parts.rightArm = limb(mPurple, 0.42, 1.15, 0.55);
+    parts.leftArm = limb(mPurple, -0.42, 1.15, 0.55);
+    const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.1,5), mWood);
+    staff.position.y = -0.55; parts.rightArm.add(staff);
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.14,6,6), mFire);
+    orb.position.y = -1.1; parts.rightArm.add(orb);
+    parts.rightLeg = limb(mDark, 0.15, 0.5, 0.4);
+    parts.leftLeg = limb(mDark, -0.15, 0.5, 0.4);
+    g.add(makeShadow(0.4)); topY = 2.4;
+  } else if (cardId === 'valkyrie') {
+    add(new THREE.BoxGeometry(0.7,0.95,0.5), mBrown, 0, 1.05);
+    add(new THREE.SphereGeometry(0.3,8,8), mSkin, 0, 1.8);
+    add(new THREE.SphereGeometry(0.34,8,8,0,Math.PI*2,0,Math.PI*0.7), mBlonde, 0, 1.85);
+    add(new THREE.CylinderGeometry(0.07,0.07,0.5,5), mBlonde, -0.3, 1.55, 0.1);
+    add(new THREE.CylinderGeometry(0.07,0.07,0.5,5), mBlonde, 0.3, 1.55, 0.1);
+    parts.rightArm = limb(mBrown, 0.5, 1.35, 0.6);
+    parts.leftArm = limb(mBrown, -0.5, 1.35, 0.6);
+    const axe = new THREE.Group();
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.0,5), mWood);
+    axe.add(handle);
+    const bladeMat = new THREE.MeshLambertMaterial({ color:0xdddddd });
+    const bL = new THREE.Mesh(new THREE.ConeGeometry(0.28,0.35,4), bladeMat);
+    bL.rotation.z = Math.PI/2; bL.position.set(-0.15, 0.3, 0); axe.add(bL);
+    const bR = new THREE.Mesh(new THREE.ConeGeometry(0.28,0.35,4), bladeMat);
+    bR.rotation.z = -Math.PI/2; bR.position.set(0.15, 0.3, 0); axe.add(bR);
+    axe.position.set(0, -0.75, 0); parts.rightArm.add(axe);
+    parts.rightLeg = limb(mDark, 0.18, 0.55, 0.55);
+    parts.leftLeg = limb(mDark, -0.18, 0.55, 0.55);
+    g.add(makeShadow(0.5)); topY = 2.2;
+  } else if (cardId === 'balloon') {
+    const mEnv = new THREE.MeshLambertMaterial({ color:0xdd3333, emissive:0x441111 });
+    const mStripe = new THREE.MeshLambertMaterial({ color:0xffd966 });
+    const mRope = new THREE.MeshLambertMaterial({ color:0x5a3a1a });
+    const mBasket = new THREE.MeshLambertMaterial({ color:0x8b5a2b });
+    const envelope = new THREE.Mesh(new THREE.SphereGeometry(1.1, 14, 12), mEnv);
+    envelope.position.y = 4.0; envelope.scale.set(1, 1.25, 1); g.add(envelope);
+    const b1 = new THREE.Mesh(new THREE.CylinderGeometry(1.08, 1.08, 0.08, 16), mStripe);
+    b1.position.y = 4.0; g.add(b1);
+    const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.08, 16), mStripe);
+    b2.position.y = 5.05; g.add(b2);
+    const b3 = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.08, 16), mStripe);
+    b3.position.y = 2.95; g.add(b3);
+    const top = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.5, 8), mEnv);
+    top.position.y = 5.7; g.add(top);
+    for (let i = 0; i < 4; i++) {
+      const angle = (i/4)*Math.PI*2 + Math.PI/4;
+      const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.4, 4), mRope);
+      rope.position.set(Math.cos(angle)*0.55, 2.6, Math.sin(angle)*0.55);
+      rope.rotation.z = Math.cos(angle)*0.35;
+      rope.rotation.x = Math.sin(angle)*0.35;
+      g.add(rope);
+    }
+    const basket = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.55, 0.75), mBasket);
+    basket.position.y = 1.85; g.add(basket);
+    const rim = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, 0.85), mDark);
+    rim.position.y = 2.15; g.add(rim);
+    const pilot = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), mSkin);
+    pilot.position.y = 2.35; g.add(pilot);
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 6), mFire);
+    flame.position.y = 2.5; g.add(flame);
+    parts.flame = flame;
+    const bomb1 = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 6), new THREE.MeshLambertMaterial({ color:0x222222 }));
+    bomb1.position.set(0.3, 1.7, 0.2); g.add(bomb1);
+    const bomb2 = bomb1.clone(); bomb2.position.set(-0.25, 1.65, 0.3); g.add(bomb2);
+    const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.6, 4), mWood);
+    flagPole.position.y = 6.2; g.add(flagPole);
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.3),
+      new THREE.MeshLambertMaterial({ color:0xffd966, side:THREE.DoubleSide }));
+    flag.position.set(0.25, 6.4, 0); g.add(flag);
+    parts.flag = flag;
+    const shadow = makeShadow(0.9);
+    shadow.name = 'shadow';
+    g.add(shadow);
+    topY = 6.5;
+  }
+  const hpBar = makeHpBar(1.2, 0.14);
+  hpBar.position.y = topY + 0.3; hpBar.visible = false;
+  g.add(hpBar);
+  g.scale.setScalar(0.01);
+  g.userData = {
+    parts, hpBar, cardId, team,
+    anim: { bobPhase:Math.random()*Math.PI*2, walkPhase:0, attackTimer:0,
+      hitFlash:0, spawnTimer:0, deathTimer:0, dying:false, moving:false, faceAngle:0 },
+  };
+  return g;
+}
+
+// ===== CONSTRUÇÃO DAS TORRES DE UM TIME =====
+function makeTowers(team) {
+  const isP = team === 'player';
+  const castleX = isP ? 70 : 730;
+  const teslaX = isP ? 200 : 600;
+  const towers = [];
+  const castle = makeCastle(team);
+  castle.position.set(to3DX(castleX), 0, to3DZ(225));
+  sceneGroup.add(castle);
+  towers.push({ id:'castle', type:'castle', x:castleX, y:225, hp:1500, maxHp:1500,
+    lastAttack:0, team, mesh:castle, range:200, dmg:90, attackMs:1000, radius:45 });
+  const t1 = makeTesla(team);
+  t1.position.set(to3DX(teslaX), 0, to3DZ(130));
+  sceneGroup.add(t1);
+  towers.push({ id:'tesla-top', type:'tesla', x:teslaX, y:130, hp:600, maxHp:600,
+    lastAttack:0, team, mesh:t1, range:180, dmg:50, attackMs:600, radius:28 });
+  const t2 = makeTesla(team);
+  t2.position.set(to3DX(teslaX), 0, to3DZ(320));
+  sceneGroup.add(t2);
+  towers.push({ id:'tesla-bot', type:'tesla', x:teslaX, y:320, hp:600, maxHp:600,
+    lastAttack:0, team, mesh:t2, range:180, dmg:50, attackMs:600, radius:28 });
+  return towers;
+}
+
+function getCastle(team) { return state.towers[team].find(t => t.type === 'castle'); }
+
+const state = {
+  time:0, elixir:5, elixirAccum:0, enemyElixir:5, enemyElixirAccum:0,
+  units:[], projectiles:[],
+  towers: { player: [], enemy: [] },
+  deck:[], hand:[], selectedCard:null,
+  aiNextSpawn:3000, gameOver:false, winner:null, handDirty:true,
+  currentBattleIndex:0, battle:null,
+  inInfinite:false, infiniteWave:1,
+};
+const cameraShake = { power:0 };
+function shakeCamera(p) { cameraShake.power = Math.max(cameraShake.power, p); }
+
+function isOnBridge(x, y) {
+  if (Math.abs(x - RIVER_CENTER_X) > RIVER_HALF_W_A + 5) return false;
+  return BRIDGE_Y_A.some(by => Math.abs(y - by) < BRIDGE_HALF_DEPTH_A);
+}
+function isInRiver(x, y) {
+  if (Math.abs(x - RIVER_CENTER_X) > RIVER_HALF_W_A) return false;
+  return !isOnBridge(x, y);
+}
+function getNextMoveTarget(u, target) {
+  const ux = u.x, uy = u.y, tx = target.x, ty = target.y;
+  const uLeft = ux < RIVER_CENTER_X - RIVER_HALF_W_A;
+  const uRight = ux > RIVER_CENTER_X + RIVER_HALF_W_A;
+  const tLeft = tx < RIVER_CENTER_X - RIVER_HALF_W_A;
+  const tRight = tx > RIVER_CENTER_X + RIVER_HALF_W_A;
+  if ((uLeft && tLeft) || (uRight && tRight)) return { x:tx, y:ty };
+  const nearestBridgeY = BRIDGE_Y_A.reduce((a, b) => Math.abs(a - uy) < Math.abs(b - uy) ? a : b);
+  if (Math.abs(ux - RIVER_CENTER_X) <= RIVER_HALF_W_A) {
+    if (Math.abs(uy - nearestBridgeY) <= BRIDGE_HALF_DEPTH_A) {
+      const exitX = tLeft ? (RIVER_CENTER_X - RIVER_HALF_W_A - 20) : (RIVER_CENTER_X + RIVER_HALF_W_A + 20);
+      return { x:exitX, y:nearestBridgeY };
+    }
+    return { x: (ux < RIVER_CENTER_X ? -1 : 1) * (RIVER_HALF_W_A + 30) + RIVER_CENTER_X, y:uy };
+  }
+  if (Math.abs(tx - RIVER_CENTER_X) <= RIVER_HALF_W_A && Math.abs(ty - nearestBridgeY) <= BRIDGE_HALF_DEPTH_A) {
+    return { x:tx, y:ty };
+  }
+  const entranceX = (ux < RIVER_CENTER_X ? -1 : 1) * RIVER_HALF_W_A + RIVER_CENTER_X;
+  return { x:entranceX, y:nearestBridgeY };
+}
+function moveToward(u, tx, ty, dt) {
+  const wp = u.flying ? { x:tx, y:ty } : getNextMoveTarget(u, { x:tx, y:ty });
+  const dx = wp.x - u.x, dy = wp.y - u.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const nx = u.x + (dx/d) * u.speed * (dt/1000);
+  const ny = u.y + (dy/d) * u.speed * (dt/1000);
+  if (u.flying || !isInRiver(nx, ny)) { u.x = nx; u.y = ny; }
+  return { dx, dy, d };
+}
+
+function spawnUnits(card, cx, cy, team) {
+  for (let i = 0; i < card.count; i++) {
+    const off = (i - (card.count-1)/2) * 24;
+    const mesh = makeCharacter(card.id, team);
+    sceneGroup.add(mesh);
+    const u = {
+      x: cx+off, y: cy + (Math.random()-0.5)*12,
+      hp: card.hp, maxHp: card.hp, dmg: card.dmg, speed: card.speed,
+      range: card.range, attackMs: card.attackMs, lastAttack: 0,
+      team, size: 12, ranged: card.ranged, name: card.name,
+      cardId: card.id, mesh, dead: false, flying: !!card.flying,
+    };
+    mesh.position.set(to3DX(u.x), 0, to3DZ(u.y));
+    const f = team === 'player' ? -Math.PI/2 : Math.PI/2;
+    mesh.rotation.y = f; mesh.userData.anim.faceAngle = f;
+    state.units.push(u);
+  }
+  Sound.playCry(card.id); vibrate(15);
+}
+function fireProjectile(from, target, dmg, color, size, isBomb) {
+  const startY = from.flying ? 5.5 : 1.2;
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(size||0.16, 8, 8), new THREE.MeshBasicMaterial({ color }));
+  mesh.position.set(to3DX(from.x), startY, to3DZ(from.y));
+  if (isBomb) {
+    const fuse = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.2, 4), new THREE.MeshBasicMaterial({ color:0xff6622 }));
+    fuse.position.y = size + 0.1;
+    mesh.add(fuse);
+  }
+  sceneGroup.add(mesh);
+  state.projectiles.push({ mesh, target, dmg, life:3000, isBomb: !!isBomb, aoeRadius: isBomb ? 100 : 0 });
+}
+function fireLightning(from, target) {
+  damage(target, from.dmg);
+  const startY = from.type === 'tesla' ? 3.1 : 8.9;
+  const sx = to3DX(from.x), sy = startY, sz = to3DZ(from.y);
+  const ex = to3DX(target.x), ey = 1.2, ez = to3DZ(target.y);
+  const segs = 8;
+  const points = [];
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs;
+    const jitter = (i > 0 && i < segs) ? 0.8 : 0;
+    points.push(new THREE.Vector3(
+      sx + (ex - sx) * t + (Math.random()-0.5)*jitter,
+      sy + (ey - sy) * t + (Math.random()-0.5)*jitter,
+      sz + (ez - sz) * t + (Math.random()-0.5)*jitter
+    ));
+  }
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+  const mat = new THREE.LineBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 1 });
+  const line = new THREE.Line(geo, mat);
+  sceneGroup.add(line);
+  effectMeshes.push(line);
+  animatedEffects.push({ type:'lightning', mesh: line, life: 220, elapsed: 0 });
+  const flash = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 1 }));
+  flash.position.set(ex, ey, ez);
+  sceneGroup.add(flash);
+  effectMeshes.push(flash);
+  animatedEffects.push({ type:'explosion', mesh: flash, life: 300, elapsed: 0 });
+  Sound.zap();
+}
+function createExplosion(x, y, z) {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 10),
+    new THREE.MeshBasicMaterial({ color:0xff6622, transparent:true, opacity:1 }));
+  mesh.position.set(x, y, z);
+  sceneGroup.add(mesh);
+  animatedEffects.push({ type:'explosion', mesh, life:400, elapsed:0 });
+  const flash = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8),
+    new THREE.MeshBasicMaterial({ color:0xffee44, transparent:true, opacity:1 }));
+  flash.position.set(x, y, z);
+  sceneGroup.add(flash);
+  animatedEffects.push({ type:'explosion', mesh:flash, life:250, elapsed:0 });
+}
+function updateProjectiles(dt) {
+  const s = dt/1000;
+  for (const p of state.projectiles) {
+    if (!p.target || p.target.hp <= 0 || p.target.dead) { p.life = 0; continue; }
+    const isTower = p.target.type === 'castle' || p.target.type === 'tesla';
+    const tx = to3DX(p.target.x), tz = to3DZ(p.target.y), ty = isTower ? 2 : 1.2;
+    const dx = tx - p.mesh.position.x, dy = ty - p.mesh.position.y, dz = tz - p.mesh.position.z;
+    const d = Math.hypot(dx, dy, dz) || 1;
+    if (d < 0.4) {
+      if (p.isBomb) {
+        const targetTeam = p.target.team;
+        const targetX = p.target.x, targetY = p.target.y;
+        for (const u of state.units) {
+          if (u.team === targetTeam || u.hp <= 0 || u.dead) continue;
+          const ud = Math.hypot(u.x - targetX, u.y - targetY);
+          if (ud < p.aoeRadius) damage(u, Math.floor(p.dmg * 0.7));
+        }
+        createExplosion(p.mesh.position.x, p.mesh.position.y, p.mesh.position.z);
+        Sound.explosionSound();
+        shakeCamera(0.5);
+      }
+      damage(p.target, p.dmg);
+      p.life = 0;
+      continue;
+    }
+    const speed = p.isBomb ? 80 : 60;
+    p.mesh.position.x += (dx/d) * speed * s;
+    p.mesh.position.y += (dy/d) * speed * s;
+    p.mesh.position.z += (dz/d) * speed * s;
+    p.life -= dt;
+  }
+  for (const p of state.projectiles) if (p.life <= 0) sceneGroup.remove(p.mesh);
+  state.projectiles = state.projectiles.filter(p => p.life > 0);
+}
+function damage(target, amount) {
+  if (target.dead) return;
+  if (target.hp <= 0) return;
+  target.hp = Math.max(0, target.hp - amount);
+  if (target.mesh && target.mesh.userData.anim) target.mesh.userData.anim.hitFlash = 130;
+  if (target.type === 'castle' || target.type === 'tesla') {
+    Sound.hitTower(); shakeCamera(0.35); vibrate(30);
+  } else Sound.hitSmall();
+}
+function updateUnit(u, dt) {
+  if (u.dead) return;
+  const enemyTeam = u.team === 'player' ? 'enemy' : 'player';
+  const enemyTowers = state.towers[enemyTeam];
+  let target = null, best = Infinity;
+  if (u.cardId === 'balloon') {
+    const castle = getCastle(enemyTeam);
+    if (castle) { target = castle; best = Math.hypot(castle.x - u.x, castle.y - u.y); }
+  } else {
+    for (const e of state.units) {
+      if (e.team === u.team || e.hp <= 0 || e.dead) continue;
+      const d = Math.hypot(e.x - u.x, e.y - u.y);
+      if (d < 150 && d < best) { target = e; best = d; }
+    }
+    if (!target) {
+      for (const t of enemyTowers) {
+        if (t.hp <= 0) continue;
+        const d = Math.hypot(t.x - u.x, t.y - u.y);
+        if (d < 400 && d < best) { target = t; best = d; }
+      }
+    }
+  }
+  if (!target) {
+    const castle = getCastle(enemyTeam);
+    if (!castle) return;
+    const r = moveToward(u, castle.x, castle.y, dt);
+    u.mesh.userData.anim.moving = true;
+    u.mesh.userData.anim.faceAngle = Math.atan2(r.dx, r.dy);
+    return;
+  }
+  const targetSize = target.radius || target.size || 12;
+  const desiredRange = u.range + targetSize;
+  if (best > desiredRange) {
+    const r = moveToward(u, target.x, target.y, dt);
+    u.mesh.userData.anim.moving = true;
+    u.mesh.userData.anim.faceAngle = Math.atan2(r.dx, r.dy);
+  } else {
+    u.mesh.userData.anim.moving = false;
+    u.mesh.userData.anim.faceAngle = Math.atan2(target.x - u.x, target.y - u.y);
+    if (state.time - u.lastAttack >= u.attackMs) {
+      u.lastAttack = state.time;
+      u.mesh.userData.anim.attackTimer = 400;
+      if (u.cardId === 'balloon') {
+        fireProjectile(u, target, u.dmg, 0x222222, 0.35, true);
+      } else if (u.ranged) {
+        const isWiz = u.cardId === 'wizard';
+        fireProjectile(u, target, u.dmg, isWiz ? 0xff6622 : (u.team === 'player' ? 0x88bbff : 0xff8888), isWiz ? 0.22 : 0.16);
+      } else damage(target, u.dmg);
+      Sound.playAttack(u.cardId);
+    }
+  }
+}
+function updateTower(t, dt) {
+  if (t.hp <= 0) return;
+  let nearest = null, best = Infinity;
+  for (const u of state.units) {
+    if (u.team === t.team || u.hp <= 0 || u.dead) continue;
+    const d = Math.hypot(u.x - t.x, u.y - t.y);
+    if (d < t.range && d < best) { nearest = u; best = d; }
+  }
+  if (nearest && state.time - t.lastAttack >= t.attackMs) {
+    t.lastAttack = state.time;
+    if (t.type === 'tesla') {
+      fireLightning(t, nearest);
+    } else {
+      fireProjectile({ x:t.x, y:t.y }, nearest, t.dmg, t.team === 'player' ? 0x6a9ae0 : 0xe06a6a, 0.25);
+      Sound.towerShot();
+    }
+  }
+}
+function aiSpawn() {
+  const battle = state.battle; if (!battle) return;
+  const affordable = CARDS.filter(c => battle.enemyCards.includes(c.id) && c.cost <= state.enemyElixir);
+  if (!affordable.length) return;
+  const card = state.enemyElixir >= 7 ? affordable.reduce((a, b) => a.cost > b.cost ? a : b)
+                                       : affordable[Math.floor(Math.random()*affordable.length)];
+  state.enemyElixir -= card.cost;
+  spawnUnits(getCardWithLevel(card.id, battle.enemyLevel),
+    640 - Math.random()*150, 90 + Math.random()*270, 'enemy');
+}
+function update(dt) {
+  if (state.gameOver) return;
+  state.time += dt;
+  state.elixirAccum += dt;
+  while (state.elixirAccum >= 2800 && state.elixir < 10) { state.elixirAccum -= 2800; state.elixir++; }
+  state.enemyElixirAccum += dt;
+  while (state.enemyElixirAccum >= 2800 && state.enemyElixir < 10) { state.enemyElixirAccum -= 2800; state.enemyElixir++; }
+  state.aiNextSpawn -= dt;
+  if (state.aiNextSpawn <= 0) { aiSpawn(); state.aiNextSpawn = 1500 + Math.random()*2000; }
+  for (const u of state.units) updateUnit(u, dt);
+  for (const t of state.towers.player) updateTower(t, dt);
+  for (const t of state.towers.enemy) updateTower(t, dt);
+  updateProjectiles(dt);
+  for (const u of state.units) {
+    if (u.hp <= 0 && !u.dead) { u.dead = true; u.mesh.userData.anim.dying = true; u.mesh.userData.anim.deathTimer = 600; }
+  }
+  state.units = state.units.filter(u => {
+    if (u.dead && u.mesh.userData.anim.deathTimer <= 0) { sceneGroup.remove(u.mesh); return false; }
+    return true;
+  });
+  const playerCastle = getCastle('player');
+  const enemyCastle = getCastle('enemy');
+  if (enemyCastle && enemyCastle.hp <= 0 && !state.gameOver) { state.gameOver = true; state.winner = 'player'; onVictory(); }
+  else if (playerCastle && playerCastle.hp <= 0 && !state.gameOver) { state.gameOver = true; state.winner = 'enemy'; onDefeat(); }
+}
+
+function animateUnit(u, dt) {
+  const m = u.mesh;
+  const { parts, anim, hpBar } = m.userData;
+  const t = state.time/1000;
+  if (anim.spawnTimer < 400) {
+    anim.spawnTimer += dt;
+    const p = Math.min(1, anim.spawnTimer/400);
+    const ease = 1 + 1.7*Math.pow(p-1, 3) + 0.7*Math.pow(p-1, 2);
+    m.scale.setScalar(Math.max(0.01, ease));
+  }
+  if (anim.dying) {
+    anim.deathTimer -= dt;
+    const p = 1 - Math.max(0, anim.deathTimer/600);
+    m.rotation.x = -p*Math.PI/2;
+    m.position.y = -p*0.3;
+    m.scale.setScalar(Math.max(0.01, 1-p));
+    return;
+  }
+  const curr = m.rotation.y;
+  let diff = ((anim.faceAngle - curr + Math.PI) % (Math.PI*2)) - Math.PI;
+  if (diff < -Math.PI) diff += Math.PI*2;
+  m.rotation.y = curr + diff * Math.min(1, dt*0.012);
+  if (u.cardId === 'balloon') {
+    m.position.y = Math.sin(t*1.5 + anim.bobPhase)*0.35;
+    m.rotation.z = Math.sin(t*1.8 + anim.bobPhase)*0.05;
+    if (parts.flame) {
+      parts.flame.scale.y = 0.8 + Math.sin(t*12)*0.3;
+      parts.flame.material.opacity = 0.7 + Math.sin(t*15)*0.3;
+    }
+    if (parts.flag) parts.flag.rotation.y = Math.sin(t*3)*0.3;
+    const shadow = m.getObjectByName('shadow');
+    if (shadow) shadow.position.y = -m.position.y + 0.05;
+  } else {
+    m.position.y = Math.sin(t*4 + anim.bobPhase)*0.035;
+    m.rotation.z = 0;
+  }
+  if (anim.moving) anim.walkPhase += dt*0.014;
+  else anim.walkPhase *= 0.92;
+  const swing = Math.sin(anim.walkPhase)*0.55;
+  if (parts.rightArm) parts.rightArm.rotation.x = swing;
+  if (parts.leftArm)  parts.leftArm.rotation.x = -swing;
+  if (parts.rightLeg) parts.rightLeg.rotation.x = -swing*0.8;
+  if (parts.leftLeg)  parts.leftLeg.rotation.x = swing*0.8;
+  if (anim.attackTimer > 0) {
+    anim.attackTimer -= dt;
+    const p = 1 - Math.max(0, anim.attackTimer/400);
+    if (u.cardId === 'balloon') {
+      m.scale.setScalar(1 + Math.sin(p*Math.PI)*0.15);
+    } else if (parts.rightArm) {
+      parts.rightArm.rotation.x = -Math.sin(p*Math.PI)*1.8;
+    }
+    if (u.cardId === 'valkyrie') m.rotation.y += Math.sin(p*Math.PI)*0.4;
+  } else if (u.cardId === 'balloon') {
+    m.scale.setScalar(1);
+  }
+  if (anim.hitFlash > 0) {
+    anim.hitFlash -= dt;
+    const on = anim.hitFlash > 0;
+    m.traverse(c => { if (c.material && c.material.emissive) c.material.emissive.setHex(on ? 0xff2222 : 0x000000); });
+  }
+  const pct = u.hp / u.maxHp;
+  hpBar.visible = pct < 0.999;
+  updateHpBar(hpBar, pct, u.team === 'player' ? 0x7ac47a : 0xe07a7a);
+}
+
+// ===== ANIMAÇÃO DAS TORRES =====
+function animateTowers(dt) {
+  const t = state.time / 1000;
+  for (const team of ['player', 'enemy']) {
+    for (const tw of state.towers[team]) {
+      if (!tw.mesh) continue;
+      if (tw.hp <= 0) {
+        if (tw.mesh.scale.x > 0.05) tw.mesh.scale.multiplyScalar(0.94);
+        continue;
+      }
+      const d = tw.mesh.userData;
+      if (d.crystal) {
+        d.crystal.rotation.y += dt*0.001;
+        d.crystal.position.y = 8.9 + Math.sin(t*2)*0.12;
+      }
+      if (d.orb) {
+        d.orb.position.y = 2.25 + Math.sin(t*3)*0.06;
+      }
+      if (d.sphere) {
+        const pulse = 1 + Math.sin(t*4)*0.06;
+        d.sphere.scale.setScalar(pulse);
+        if (d.halo) {
+          d.halo.rotation.z += dt*0.002;
+          d.halo.scale.setScalar(1 + Math.sin(t*3)*0.1);
+        }
+      }
+      updateHpBar(d.hpBar, tw.hp/tw.maxHp, team === 'player' ? (tw.type === 'castle' ? 0x66aaff : 0x66ddff) : (tw.type === 'castle' ? 0xff6666 : 0xff6666));
+    }
+  }
+}
+
+function updateHud() {
+  const pc = getCastle('player'), ec = getCastle('enemy');
+  document.getElementById('hp-player').textContent = pc ? Math.ceil(pc.hp) : 0;
+  document.getElementById('hp-enemy').textContent = ec ? Math.ceil(ec.hp) : 0;
+  document.getElementById('elixir-text').textContent = `${state.elixir} / 10`;
+  document.getElementById('elixir-fill').style.width = `${(state.elixir/10)*100}%`;
+  const handEl = document.getElementById('hand');
+  if (state.handDirty) {
+    state.handDirty = false; handEl.innerHTML = '';
+    state.hand.forEach((card, i) => {
+      const el = document.createElement('div'); el.className = 'card';
+      const lvl = getCardLevel(card.id);
+      el.innerHTML = `<div class="icon">${card.icon}</div><div class="name">${card.name}</div>
+        <div class="lvl-badge">Nv ${lvl}</div><div class="cost">${card.cost}</div>`;
+      el.addEventListener('pointerdown', (e) => onCardPointerDown(e, i));
+      handEl.appendChild(el);
+    });
+  }
+  Array.from(handEl.children).forEach((el, i) => {
+    const card = state.hand[i]; if (!card) return;
+    el.classList.toggle('selected', state.selectedCard === i);
+    el.classList.toggle('disabled', state.elixir < card.cost);
+  });
+}
+
+const camCtrl = {
+  azimuth: 0, elevation: THREE.MathUtils.degToRad(58), distance: 90,
+  minElev: THREE.MathUtils.degToRad(15), maxElev: THREE.MathUtils.degToRad(85),
+  minDist: 35, maxDist: 260,
+};
+const camBase = { x:0, y:0, z:0 };
+function updateCameraFromCtrl() {
+  const az = camCtrl.azimuth, el = camCtrl.elevation, dist = camCtrl.distance;
+  camBase.x = Math.sin(az) * Math.cos(el) * dist;
+  camBase.y = Math.sin(el) * dist;
+  camBase.z = Math.cos(az) * Math.cos(el) * dist;
+  camera.position.set(camBase.x, camBase.y, camBase.z);
+  camera.up.set(0, 1, 0);
+  camera.lookAt(0, 0, 0);
+}
+window.resetCamera = () => {
+  const portrait = camera.aspect < 1;
+  camCtrl.azimuth = 0;
+  camCtrl.elevation = THREE.MathUtils.degToRad(portrait ? 58 : 52);
+  camCtrl.distance = portrait ? 100 : 70;
+  updateCameraFromCtrl();
+  vibrate(15); Sound.click();
+};
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+const dragGhost = document.getElementById('drag-ghost');
+let dragActive = false, cardDragPointerId = null;
+
+function onCardPointerDown(e, i) {
+  if (state.gameOver) return;
+  e.preventDefault();
+  Sound.init(); Sound.resume();
+  const card = state.hand[i];
+  if (state.elixir < card.cost) { Sound.click(); return; }
+  Sound.click();
+  state.selectedCard = i; state.handDirty = true; vibrate(10);
+  dragActive = true; cardDragPointerId = e.pointerId;
+  dragGhost.querySelector('.icon').textContent = card.icon;
+  dragGhost.querySelector('.name').textContent = card.name;
+  dragGhost.style.left = e.clientX + 'px';
+  dragGhost.style.top = e.clientY + 'px';
+  dragGhost.classList.add('active');
+}
+document.addEventListener('pointermove', (e) => {
+  if (!dragActive || e.pointerId !== cardDragPointerId) return;
+  dragGhost.style.left = e.clientX + 'px';
+  dragGhost.style.top = e.clientY + 'px';
+});
+document.addEventListener('pointerup', (e) => {
+  if (!dragActive || e.pointerId !== cardDragPointerId) return;
+  dragActive = false; dragGhost.classList.remove('active');
+  if (state.selectedCard === null) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+  if (inside) {
+    const pos = screenToGameCoords(e.clientX, e.clientY);
+    if (pos && pos.x <= 280 && pos.y >= 30 && pos.y <= 420) deployCard(pos.x, pos.y);
+  }
+});
+
+const canvasPointers = new Map();
+let camMode = null, camDragStart = null, pinchStartDist = 0, pinchStartCamDist = 0;
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  if (currentScreen !== 'battle') return;
+  Sound.init(); Sound.resume();
+  if (state.selectedCard !== null) {
+    const pos = screenToGameCoords(e.clientX, e.clientY);
+    if (pos && pos.x <= 280 && pos.y >= 30 && pos.y <= 420) deployCard(pos.x, pos.y);
+    return;
+  }
+  canvasPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (canvasPointers.size === 1) {
+    camMode = 'rotate';
+    camDragStart = { x: e.clientX, y: e.clientY, azimuth: camCtrl.azimuth, elevation: camCtrl.elevation };
+  } else if (canvasPointers.size === 2) {
+    camMode = 'pinch';
+    const pts = Array.from(canvasPointers.values());
+    pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    pinchStartCamDist = camCtrl.distance;
+  }
+});
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (!canvasPointers.has(e.pointerId)) return;
+  canvasPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (camMode === 'rotate' && canvasPointers.size === 1 && camDragStart) {
+    const dx = e.clientX - camDragStart.x, dy = e.clientY - camDragStart.y;
+    camCtrl.azimuth = camDragStart.azimuth - dx * 0.008;
+    camCtrl.elevation = THREE.MathUtils.clamp(camDragStart.elevation + dy * 0.008, camCtrl.minElev, camCtrl.maxElev);
+    updateCameraFromCtrl();
+  } else if (camMode === 'pinch' && canvasPointers.size === 2) {
+    const pts = Array.from(canvasPointers.values());
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (pinchStartDist > 5 && dist > 5) {
+      camCtrl.distance = THREE.MathUtils.clamp(pinchStartCamDist * (pinchStartDist / dist), camCtrl.minDist, camCtrl.maxDist);
+      updateCameraFromCtrl();
+    }
+  }
+});
+function endCanvasPointer(e) {
+  canvasPointers.delete(e.pointerId);
+  if (canvasPointers.size === 0) { camMode = null; camDragStart = null; }
+  else if (canvasPointers.size === 1) {
+    const pt = Array.from(canvasPointers.values())[0];
+    camMode = 'rotate';
+    camDragStart = { x: pt.x, y: pt.y, azimuth: camCtrl.azimuth, elevation: camCtrl.elevation };
+  }
+}
+renderer.domElement.addEventListener('pointerup', endCanvasPointer);
+renderer.domElement.addEventListener('pointercancel', endCanvasPointer);
+
+function screenToGameCoords(clientX, clientY) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObject(ground);
+  if (hits.length === 0) return null;
+  const local = sceneGroup.worldToLocal(hits[0].point.clone());
+  return { x: from3DX(local.x), y: from3DZ(local.z) };
+}
+function deployCard(x2d, y2d) {
+  if (state.selectedCard === null) return;
+  const card = state.hand[state.selectedCard];
+  if (state.elixir < card.cost) return;
+  spawnUnits(getCardWithLevel(card.id), x2d, y2d, 'player');
+  state.elixir -= card.cost;
+  state.deck.push(state.hand[state.selectedCard]);
+  state.hand[state.selectedCard] = state.deck.shift();
+  state.selectedCard = null; state.handDirty = true;
+}
+
+const overlay = document.getElementById('overlay');
+function onVictory() {
+  if (state.inInfinite) {
+    const wave = state.infiniteWave;
+    const battle = state.battle;
+    meta.gold += battle.gold;
+    meta.xp += battle.xp;
+    meta.wins++;
+    if (wave > meta.infiniteBest) meta.infiniteBest = wave;
+    meta.infiniteCurrent = wave + 1;
+    while (meta.xp >= meta.level * 100) { meta.xp -= meta.level * 100; meta.level++; }
+    saveMeta();
+    Sound.victory(); vibrate([100,50,100,50,200]); shakeCamera(0.8);
+    document.getElementById('overlay-title').textContent = `ONDA ${wave} VENCIDA!`;
+    document.getElementById('overlay-title').className = 'win';
+    document.getElementById('overlay-sub').textContent =
+      `Próxima: Onda ${wave + 1} • Nível ${(8 + wave * 0.15).toFixed(2)}`;
+    document.getElementById('overlay-reward').innerHTML =
+      `+ 💰 ${battle.gold.toLocaleString('pt-BR')} ouro<br>
+       + ✨ ${battle.xp.toLocaleString('pt-BR')} XP<br><br>
+       🏆 Recorde: <b>Onda ${meta.infiniteBest}</b>`;
+    const nextBtn = document.getElementById('ov-next');
+    nextBtn.style.display = 'block';
+    nextBtn.textContent = `▶️ Próxima Onda ${meta.infiniteCurrent}`;
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+    overlay.classList.add('show');
+    return;
+  }
+  const battle = state.battle, idx = state.currentBattleIndex;
+  const wasNew = idx >= meta.campaignProgress;
+  const goldGain = wasNew ? battle.gold : Math.floor(battle.gold*0.3);
+  const xpGain   = wasNew ? battle.xp   : Math.floor(battle.xp*0.3);
+  meta.gold += goldGain; meta.xp += xpGain; meta.wins++;
+  if (wasNew) meta.campaignProgress = idx+1;
+  while (meta.xp >= meta.level*100) { meta.xp -= meta.level*100; meta.level++; }
+  saveMeta();
+  Sound.victory(); vibrate([100, 50, 100, 50, 200]); shakeCamera(0.8);
+  document.getElementById('overlay-title').textContent = 'VITÓRIA!';
+  document.getElementById('overlay-title').className = 'win';
+  document.getElementById('overlay-sub').textContent = wasNew ? `"${battle.name}" concluída!` : 'Recompensa reduzida (já vencida).';
+  document.getElementById('overlay-reward').innerHTML = `+ 💰 ${goldGain.toLocaleString('pt-BR')} ouro • + ✨ ${xpGain} XP`;
+  const nextBtn = document.getElementById('ov-next');
+  nextBtn.style.display = 'block';
+  nextBtn.disabled = false;
+  nextBtn.style.opacity = '1';
+  if (idx < CAMPAIGN.length - 1) {
+    nextBtn.textContent = '▶️ Próxima Fase';
+  } else {
+    nextBtn.textContent = '🏁 Campanha Completa';
+    nextBtn.disabled = true;
+    nextBtn.style.opacity = '0.5';
+  }
+  overlay.classList.add('show');
+}
+function onDefeat() {
+  if (state.inInfinite) {
+    const wave = state.infiniteWave;
+    if (wave > meta.infiniteBest) meta.infiniteBest = wave;
+    meta.infiniteCurrent = 1;
+    saveMeta();
+    Sound.defeat(); vibrate(300);
+    document.getElementById('overlay-title').textContent = 'FIM DA JORNADA';
+    document.getElementById('overlay-title').className = 'lose';
+    document.getElementById('overlay-sub').textContent = `Você chegou até a Onda ${wave}`;
+    document.getElementById('overlay-reward').innerHTML =
+      `🏆 Recorde: <b>Onda ${meta.infiniteBest}</b><br>💪 Tente novamente!`;
+    document.getElementById('ov-next').style.display = 'none';
+    overlay.classList.add('show');
+    return;
+  }
+  Sound.defeat(); vibrate(300);
+  document.getElementById('overlay-title').textContent = 'DERROTA';
+  document.getElementById('overlay-title').className = 'lose';
+  document.getElementById('overlay-sub').textContent = 'Seu castelo caiu…';
+  document.getElementById('overlay-reward').textContent = '';
+  document.getElementById('ov-next').style.display = 'none';
+  overlay.classList.add('show');
+}
+document.getElementById('ov-next').addEventListener('click', () => {
+  overlay.classList.remove('show');
+  if (state.inInfinite) {
+    startInfinite(meta.infiniteCurrent || 1);
+  } else {
+    const next = state.currentBattleIndex + 1;
+    if (next < CAMPAIGN.length) startBattle(next);
+    else showScreen('map');
+  }
+});
+document.getElementById('ov-retry').addEventListener('click', () => {
+  overlay.classList.remove('show');
+  if (state.inInfinite) startInfinite(state.infiniteWave || 1);
+  else startBattle(state.currentBattleIndex);
+});
+document.getElementById('ov-back').addEventListener('click', () => {
+  overlay.classList.remove('show');
+  if (state.inInfinite) showScreen('menu');
+  else showScreen('map');
+});
+window.fleeBattle = () => {
+  if (state.inInfinite) { meta.infiniteCurrent = 1; saveMeta(); }
+  state.gameOver = true; state.winner = 'enemy';
+  overlay.classList.remove('show');
+  showScreen('menu');
+};
+
+function onResize() {
+  const w = viewEl.clientWidth, h = viewEl.clientHeight;
+  if (!w || !h) return;
+  const aspect = w / h, portrait = aspect < 1;
+  camera.aspect = aspect;
+  camera.fov = portrait ? 54 : 52;
+  camera.updateProjectionMatrix();
+  let renderW, renderH;
+  if (portrait) { renderW = RENDER_RES; renderH = Math.round(RENDER_RES / aspect); }
+  else { renderH = RENDER_RES; renderW = Math.round(RENDER_RES * aspect); }
+  renderer.setPixelRatio(1);
+  renderer.setSize(renderW, renderH, false);
+  const canvas = renderer.domElement;
+  canvas.style.width = '100%'; canvas.style.height = '100%';
+  canvas.style.objectFit = 'contain';
+  sceneGroup.rotation.y = portrait ? Math.PI/2 : 0;
+  if (portrait) groundTex.repeat.set(2.25, 4);
+  else groundTex.repeat.set(4, 2.25);
+  groundTex.needsUpdate = true;
+  camCtrl.azimuth = 0;
+  camCtrl.elevation = THREE.MathUtils.degToRad(portrait ? 58 : 52);
+  camCtrl.distance = portrait ? 100 : 70;
+  updateCameraFromCtrl();
+}
+window.addEventListener('resize', () => onResize());
+window.addEventListener('orientationchange', () => { setTimeout(onResize, 100); setTimeout(onResize, 400); });
+
+let lastTime = performance.now();
+function loop(now) {
+  const dt = Math.min(now - lastTime, 100);
+  lastTime = now;
+  if (currentScreen === 'battle') {
+    if (camBase.x === 0 && camBase.y === 0 && camBase.z === 0) onResize();
+    update(dt); updateEffects(dt); animateTowers(dt);
+    for (const u of state.units) {
+      u.mesh.position.x = to3DX(u.x);
+      u.mesh.position.z = to3DZ(u.y);
+      animateUnit(u, dt);
+    }
+    if (cameraShake.power > 0.001) {
+      camera.position.x = camBase.x + (Math.random()-0.5)*cameraShake.power;
+      camera.position.y = camBase.y + (Math.random()-0.5)*cameraShake.power;
+      camera.position.z = camBase.z + (Math.random()-0.5)*cameraShake.power;
+      cameraShake.power *= Math.pow(0.86, dt/16);
+    } else camera.position.set(camBase.x, camBase.y, camBase.z);
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+    updateHud();
+  }
+  requestAnimationFrame(loop);
+}
+
+function shuffle(a) {
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function resetGame() {
+  for (const u of state.units) if (u.mesh) sceneGroup.remove(u.mesh);
+  for (const p of state.projectiles) if (p.mesh) sceneGroup.remove(p.mesh);
+  state.units = []; state.projectiles = [];
+  state.time = 0;
+  state.elixir = 5; state.elixirAccum = 0;
+  state.enemyElixir = 5; state.enemyElixirAccum = 0;
+  for (const t of [...state.towers.player, ...state.towers.enemy]) {
+    t.hp = t.maxHp;
+    t.lastAttack = 0;
+    if (t.mesh) { t.mesh.scale.set(1,1,1); t.mesh.visible = true; }
+  }
+  state.deck = shuffle([...CARDS, ...CARDS, ...CARDS]);
+  state.hand = [];
+  for (let i = 0; i < 4; i++) state.hand.push(state.deck.shift());
+  state.selectedCard = null;
+  state.aiNextSpawn = 3000;
+  state.gameOver = false; state.winner = null;
+  state.handDirty = true;
+  cameraShake.power = 0;
+}
+function startBattle(idx) {
+  state.inInfinite = false;
+  state.currentBattleIndex = idx;
+  state.battle = CAMPAIGN[idx];
+  const nextBtn = document.getElementById('ov-next');
+  nextBtn.style.display = 'block';
+  nextBtn.disabled = false;
+  nextBtn.style.opacity = '1';
+  document.getElementById('battle-title').textContent = `${idx+1}. ${state.battle.name}`;
+  buildScenery(state.battle.theme);
+  resetGame();
+  overlay.classList.remove('show');
+  showScreen('battle');
+}
+
+function generateInfiniteBattle(wave) {
+  const level = 8.0 + (wave - 1) * 0.15;
+  const allIds = CARDS.map(c => c.id);
+  const numCards = Math.min(8, 2 + Math.floor(wave / 2));
+  const shuffled = [...allIds].sort(() => Math.random() - 0.5);
+  const enemyCards = shuffled.slice(0, numCards);
+  const themes = CAMPAIGN.map(c => c.theme);
+  const theme = themes[Math.floor(Math.random() * themes.length)];
+  const gold = Math.min(25000 * Math.pow(1.15, wave - 1), 1000000);
+  const xp = Math.min(4000 * Math.pow(1.12, wave - 1), 200000);
+  return { name: `🌊 Onda ${wave}`, enemyLevel: level, enemyCards, gold: Math.floor(gold), xp: Math.floor(xp), theme };
+}
+function startInfinite(wave) {
+  state.inInfinite = true;
+  state.infiniteWave = wave;
+  state.currentBattleIndex = -1;
+  state.battle = generateInfiniteBattle(wave);
+  meta.infiniteCurrent = wave;
+  saveMeta();
+  const nextBtn = document.getElementById('ov-next');
+  nextBtn.style.display = 'block';
+  nextBtn.disabled = false;
+  nextBtn.style.opacity = '1';
+  document.getElementById('battle-title').textContent = state.battle.name;
+  buildScenery(state.battle.theme);
+  resetGame();
+  overlay.classList.remove('show');
+  showScreen('battle');
+}
+window.openInfinite = () => {
+  Sound.init(); Sound.resume(); Sound.click();
+  startInfinite(meta.infiniteCurrent || 1);
+};
+
+// Init
+state.towers.player = makeTowers('player');
+state.towers.enemy = makeTowers('enemy');
+
+buildScenery(CAMPAIGN[0].theme);
+renderMenu();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
